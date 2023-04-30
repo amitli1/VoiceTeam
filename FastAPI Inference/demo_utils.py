@@ -13,7 +13,7 @@ import plotly.express as px
 import speech_recognition as sr
 from tempfile import NamedTemporaryFile
 from datetime import datetime, timedelta
-
+import pandas as pd
 
 import settings
 
@@ -83,7 +83,7 @@ def inference_file(audio):
     :return: current language, vad fig, gr.update(visible=True), transcribe, gr.update(visible=True), gr.update(visible=True)
     """
 
-    time.sleep(0.2)
+    # time.sleep(0.2)
 
     if settings.FIRST and settings.streaming:
         print('open thread')
@@ -94,11 +94,11 @@ def inference_file(audio):
 
     wav = torch.from_numpy(librosa.load(audio, sr=16000)[0])
     settings.audio_vec = torch.cat((settings.audio_vec, wav))
-    j = max((0, len(wav) // 16000 - 20))
-    wav = settings.audio_vec
-    j = max((0, len(wav)//16000 - 20))
-    wav = wav[j * 8000:]
-    speech_probs = []
+    speech_probs = settings.speech_probs
+
+    # j is the start point (in seconds) where the vad graph will start
+    j = max(0, len(speech_probs) // 10 - 30)
+
     window_size_samples = 1600
     x = []
     y = []
@@ -108,13 +108,24 @@ def inference_file(audio):
             break
         speech_prob = settings.vad(chunk, 16000).item()
         speech_probs.append(speech_prob)
+    settings.speech_probs = speech_probs
+    if len(speech_probs) > 300:
+        speech_probs = speech_probs[-300:]
     settings.vad_iterator.reset_states()
     sample_per_sec = 16000 / window_size_samples
+    if not settings.streaming:
+        j = max(0, len(wav) // 16000 - 30)
     x.extend([j + i / sample_per_sec for i in range(len(speech_probs))])
     y.extend(speech_probs)
-    fig = px.line(x=x, y=y)
+
+    df = pd.DataFrame()
+    df['Time'] = x
+    df['Speech Probabilities'] = y
+    fig = px.line(df, x='Time', y='Speech Probabilities', title='Speech probabilities over time')
     fig.add_scatter(opacity=0, x=[j], y=[1])
     fig.update_layout(showlegend=False)
+    # delete if not needed
+    wav = settings.audio_vec
 
     if not settings.streaming:
         if wav.shape[0] > 16000 * 30:
