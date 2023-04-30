@@ -59,6 +59,7 @@ def transcribe_chunk_live(audio):
     print('in transcribe_chunk_live')
     audio_data = {'wav': [str(i) for i in audio.tolist()]}
     res = requests.get(settings.LIVE_URL, json=audio_data)
+    # print(res.json())
     return res.json()[0]
 
 
@@ -150,10 +151,8 @@ def inference_file(audio):
         print(settings.languages, len(settings.languages))
         if len(settings.languages) > 0:
             settings.curr_lang = mode(settings.languages)
-
     return settings.curr_lang, fig, gr.update(visible=True), settings.transcribe, \
            gr.update(visible=True), gr.update(visible=True)
-
 
 def clear():
     """
@@ -168,6 +167,7 @@ def clear():
     settings.transcribe = ''
     settings.transcription = ['']
     settings.languages = []
+    settings.speech_probs = []
     settings.FIRST = True
     return '', gr.update(visible=False), gr.update(visible=False), '', gr.update(visible=False),gr.update(visible=False)
 
@@ -249,7 +249,7 @@ def realtime():
                 # print('result', result)
                 result = transcribe_chunk_live(wav)
                 text = result['text'].strip()
-                settings.languages.append(result['language'])
+                settings.languages.append(settings.LANGUAGES[result['language']])
                 # if result['segments']:
                 if result['no_speech_prob'] > 0.75:
                     print('result[segments][0][no_speech_prob]', result['no_speech_prob'])
