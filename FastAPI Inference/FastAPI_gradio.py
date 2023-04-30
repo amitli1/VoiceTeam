@@ -73,6 +73,10 @@ css = """
                 transform: rotate(360deg);
             }
         }
+        #result-textarea_rtl
+        {
+         direction: rtl;
+        }
         #share-btn-container {
             display: flex; margin-top: 1.5rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem
             !important; background-color: #000000; justify-content: center; align-items: center; border-radius: 9999px
@@ -148,7 +152,7 @@ def gradio_main(static_url, live_url, debug_flag=False):
                         trans_btn3 = gr.Button("Transcribe", visible=False)
 
             text = gr.Textbox(show_label=False, elem_id="result-textarea")
-            text2 = gr.Textbox(show_label=False, elem_id="result-textarea")
+            text2 = gr.Textbox(show_label=False, elem_id="result-textarea_rtl")
             with gr.Row():
                 clear_btn = gr.Button("Clear", visible=False)
                 play_btn = gr.Button('Play audio', visible=False)
