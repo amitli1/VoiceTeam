@@ -277,18 +277,7 @@ def realtime():
                 compression_ratio = result['compression_ratio']
                 no_speech_prob = result['no_speech_prob']
                 avg_logprob = result['avg_logprob']
-                should_skip = False
-                if compression_ratio > settings.compression_ratio_threshold:
-                    print("transcription aborted due to compression_ratio")
-                    should_skip = True
-                if avg_logprob < settings.logprob_threshold:
-                    print("transcription aborted due to avg_logprob")
-                    should_skip = True
-                if no_speech_prob > settings.no_speech_threshold:
-                    print("transcription aborted due to no_speech_prob")
-                    should_skip = True
-                if should_skip:
-                    text = ''
+                text = filter_bad_results(text, compression_ratio, no_speech_prob, avg_logprob)
                 
                 if len(settings.languages) > settings.num_lang_results:
                     settings.languages.pop(0)
@@ -317,3 +306,22 @@ def realtime():
         except KeyboardInterrupt:
             break
     print('Out of real time')
+
+def filter_bad_results(text, compression_ratio, no_speech_prob, avg_logprob):
+    should_skip = False
+    if compression_ratio > settings.compression_ratio_threshold:
+        print("transcription aborted due to compression_ratio")
+        should_skip = True
+    if avg_logprob < settings.logprob_threshold:
+        print("transcription aborted due to avg_logprob")
+        should_skip = True
+    if no_speech_prob > settings.no_speech_threshold:
+        print("transcription aborted due to no_speech_prob")
+        should_skip = True
+    low_text = text.lower()
+    if 'thanks for watching' in low_text:
+        should_skip = True
+
+    if should_skip:
+        return ''
+    return text

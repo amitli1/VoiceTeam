@@ -156,7 +156,7 @@ def gradio_main(static_url, live_url, debug_flag=False):
                         trans_btn3 = gr.Button("Transcribe", visible=False)
 
             text = gr.Textbox(show_label=True, elem_id="result-textarea", label = "Detected Language:")
-            text2 = gr.Textbox(show_label=False, elem_id="result-textarea_rtl")
+            text2 = gr.Textbox(show_label=True, elem_id="result-textarea_rtl", label = "Transcription:")
 
             plot = gr.Plot(show_label=False, visible=False)
 
