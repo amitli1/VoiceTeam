@@ -95,7 +95,8 @@ css = """
 def gradio_main(static_url, live_url, debug_flag=False):
     init_globals(static_url, live_url)
 
-    block = gr.Blocks(css=css)
+    # block = gr.Blocks(css=css)
+    block = gr.Blocks(theme=gr.themes.Glass())
 
     with block:
         gr.HTML(
@@ -110,17 +111,18 @@ def gradio_main(static_url, live_url, debug_flag=False):
                     "
                   >
                     <h1 style="font-weight: 900; margin-bottom: 7px;">
-                      Whisper
+                      Automatic Speech Recognition
                     </h1>
                   </div>
                 </div>
             """
         )
         with gr.Group():
-            plot = gr.Plot(show_label=False, visible=False)
+            
             with gr.Row():
                 with gr.Box():
-                    radio = gr.Radio(["סטרימינג", "הקלטה", "קובץ"], label="?איך תרצה לספק את האודיו")
+                    # radio = gr.Radio(["סטרימינג", "הקלטה", "קובץ"], label="?איך תרצה לספק את האודיו")
+                    radio = gr.Radio(["Streaming", "Recording", "Uploaded File"], label="Audio Type:")
                     with gr.Row().style():
                         # Different type of gr.Audio - streaming, recording, uploading
                         audio = gr.Audio(
@@ -151,8 +153,11 @@ def gradio_main(static_url, live_url, debug_flag=False):
                         trans_btn = gr.Button("Transcribe", visible=False)
                         trans_btn3 = gr.Button("Transcribe", visible=False)
 
-            text = gr.Textbox(show_label=False, elem_id="result-textarea")
+            text = gr.Textbox(show_label=True, elem_id="result-textarea", label = "Detected Language:")
             text2 = gr.Textbox(show_label=False, elem_id="result-textarea_rtl")
+
+            plot = gr.Plot(show_label=False, visible=False)
+
             with gr.Row():
                 clear_btn = gr.Button("Clear", visible=False)
                 play_btn = gr.Button('Play audio', visible=False)
@@ -172,13 +177,13 @@ def gradio_main(static_url, live_url, debug_flag=False):
                         </p>
             </div>
             ''')
-            gr.HTML('''
+            # gr.HTML('''
 
-               <img style="text-align: center; max-width: 650px; margin: 0 auto;"
-                src="https://geekflare.com/wp-content/uploads/2022/02/speechrecognitionapi.png",
-                width="500" height="600">
+            #    <img style="text-align: center; max-width: 650px; margin: 0 auto;"
+            #     src="https://geekflare.com/wp-content/uploads/2022/02/speechrecognitionapi.png",
+            #     width="500" height="600">
 
-            ''')
+            # ''')
 
     block.queue().launch(debug=debug_flag, )
 

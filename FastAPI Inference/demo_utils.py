@@ -18,18 +18,18 @@ import pandas as pd
 import settings
 
 
-def change_audio(string):
+def change_audio(audio_type):
     """
     The function allows the user to choose a way to provide audio
     :param string:
     :return:
     """
 
-    if string == 'סטרימינג':
+    if audio_type == 'Streaming':
         settings.streaming = True
         return gr.update(visible=True),  gr.update(visible=False), gr.update(visible=False), \
             gr.update(visible=False), gr.update(visible=False)
-    elif string == 'הקלטה':
+    elif audio_type == 'Recording':
         settings.streaming = False
         return gr.update(visible=False),  gr.update(visible=False), gr.update(visible=False), \
             gr.update(visible=True), gr.update(visible=True)
@@ -107,6 +107,7 @@ def inference_file(audio):
         chunk = wav[i: i + window_size_samples]
         if len(chunk) < window_size_samples:
             break
+
         speech_prob = settings.vad(chunk, 16000).item()
         speech_probs.append(speech_prob)
     settings.speech_probs = speech_probs
@@ -121,8 +122,8 @@ def inference_file(audio):
 
     df = pd.DataFrame()
     df['Time'] = x
-    df['Speech Probabilities'] = y
-    fig = px.line(df, x='Time', y='Speech Probabilities', title='Speech probabilities over time')
+    df['Speech Probability'] = y
+    fig = px.line(df, x='Time', y='Speech Probability', title='Voice Activity Detection')
     fig.add_scatter(opacity=0, x=[j], y=[1])
     fig.update_layout(showlegend=False)
     # delete if not needed
