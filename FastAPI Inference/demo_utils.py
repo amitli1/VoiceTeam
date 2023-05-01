@@ -49,6 +49,9 @@ def play_sound():
     mixer.music.play()
 
 
+
+
+
 def transcribe_chunk_live(audio):
     """
     This functions transcribe given audio chunk. It also determines the language of the chunk and append it to the
@@ -56,10 +59,14 @@ def transcribe_chunk_live(audio):
     :param audio:
     :return: str: transcription
     """
-    print('in transcribe_chunk_live')
+
+    speech_timestamps = settings.get_speech_timestamps(audio, settings.vad_debug, sampling_rate=16000)
+    if len(speech_timestamps) != 0:
+        audio             = settings.collect_chunks(speech_timestamps, audio)
+
     audio_data = {'wav': [str(i) for i in audio.tolist()]}
     res = requests.get(settings.LIVE_URL, json=audio_data)
-    # print(res.json())
+
     return res.json()[0]
 
 
@@ -85,6 +92,8 @@ def inference_file(audio):
     """
 
     # time.sleep(0.2)
+    # amitli: when streaming is stopped -> we will clear the MIC thread queue
+    settings.current_streamming_time = datetime.now()
 
     if settings.FIRST and settings.streaming:
         print('open thread')
@@ -161,6 +170,7 @@ def clear():
     :return: "Empty" figure and transcription with relevant updates to the Gradio components.
     """
     print('in clear')
+    settings.current_streamming_time = 0
     settings.STOP = True
     settings.curr_lang = ''
     settings.audio_vec = torch.tensor([])
@@ -219,6 +229,12 @@ def realtime():
 
     while not settings.STOP:
         try:
+
+            current_time = datetime.now()
+            diff_in_seconds = (current_time - settings.current_streamming_time).seconds
+            if diff_in_seconds >= 1:
+                data_queue.queue.clear()
+
             now = datetime.utcnow()
             # Pull raw recorded audio from the queue.
             if not data_queue.empty():
@@ -246,7 +262,7 @@ def realtime():
 
                 # Read the transcription.
                 wav = torch.from_numpy(librosa.load(temp_file, sr=16000)[0])
-                # print('result', result)
+
                 result = transcribe_chunk_live(wav)
                 text = result['text'].strip()
                 settings.languages.append(settings.LANGUAGES[result['language']])
