@@ -60,9 +60,12 @@ def transcribe_chunk_live(audio):
     :return: str: transcription
     """
 
+    num_of_samples_before_vad = len(audio)
     speech_timestamps = settings.get_speech_timestamps(audio, settings.vad_debug, sampling_rate=16000)
     if len(speech_timestamps) != 0:
         audio             = settings.collect_chunks(speech_timestamps, audio)
+    num_of_samples_after_vad = len(audio)
+    print(f"[transcribe_chunk_live]\n\tBefore VAD: {num_of_samples_before_vad} samples, {round(num_of_samples_before_vad/16000, 2)} seconds\n\tAfter VAD: {num_of_samples_after_vad} samples, {round(num_of_samples_after_vad/16000, 2)} seconds")
 
     audio_data = {'wav': [str(i) for i in audio.tolist()]}
     res = requests.get(settings.LIVE_URL, json=audio_data)
@@ -158,7 +161,7 @@ def inference_file(audio):
                     chunk = wav[start:end]
         else:
             settings.transcribe += transcribe_chunk(wav)
-        print(settings.languages, len(settings.languages))
+        print(f"detect langs ={settings.languages}")
         if len(settings.languages) > 0:
             settings.curr_lang = mode(settings.languages)
     return settings.curr_lang, fig, gr.update(visible=True), settings.transcribe, \
@@ -233,7 +236,7 @@ def realtime():
 
             current_time = datetime.now()
             diff_in_seconds = (current_time - settings.current_streamming_time).seconds
-            if diff_in_seconds >= 1:
+            if diff_in_seconds >= 0.6:
                 data_queue.queue.clear()
 
             now = datetime.utcnow()
@@ -269,7 +272,7 @@ def realtime():
                 settings.languages.append(settings.LANGUAGES[result['language']])
                 # if result['segments']:
                 if result['no_speech_prob'] > 0.75:
-                    print('result[segments][0][no_speech_prob]', result['no_speech_prob'])
+                    print(f"No speech prob is too high ({result['no_speech_prob']}) => text will be empty")
                     text = ''
                 if len(settings.languages) > 3:
                     settings.languages.pop(0)
@@ -282,7 +285,7 @@ def realtime():
                     settings.transcription.append(text)
                 else:
                     settings.transcription[-1] = text
-                print(settings.transcription)
+                print(f"Full transcription so far:\n{settings.transcription}\n")
 
                 if text != '':
                     settings.transcribe = ''
