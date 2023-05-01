@@ -60,6 +60,8 @@ def transcribe_chunk_live(audio):
     :return: str: transcription
     """
 
+    settings.recordingUtil.record_wav(audio)
+
     num_of_samples_before_vad = len(audio)
     speech_timestamps = settings.get_speech_timestamps(audio, settings.vad_debug, sampling_rate=16000)
     if len(speech_timestamps) != 0:
@@ -236,7 +238,7 @@ def realtime():
 
             current_time = datetime.now()
             diff_in_seconds = (current_time - settings.current_streamming_time).seconds
-            if diff_in_seconds >= 0.6:
+            if diff_in_seconds >= 1:
                 data_queue.queue.clear()
 
             now = datetime.utcnow()
@@ -267,6 +269,7 @@ def realtime():
                 # Read the transcription.
                 wav = torch.from_numpy(librosa.load(temp_file, sr=16000)[0])
 
+                # call whisper
                 result = transcribe_chunk_live(wav)
                 text = result['text'].strip()
                 settings.languages.append(settings.LANGUAGES[result['language']])

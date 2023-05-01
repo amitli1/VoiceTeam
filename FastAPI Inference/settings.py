@@ -1,6 +1,6 @@
 import torch
 import whisper 
-
+from recording_util import RecordingUtil
 
 def init_globals(static_url, live_url):
     """
@@ -10,8 +10,9 @@ def init_globals(static_url, live_url):
     :return:
     """
     global audio_vec, transcribe, transcription, languages, curr_lang, vad, vad_iterator, STOP, FIRST, streaming,\
-           STATIC_URL, LIVE_URL, speech_probs, LANGUAGES, get_speech_timestamps, collect_chunks, vad_debug, current_streamming_time
+           STATIC_URL, LIVE_URL, speech_probs, LANGUAGES, get_speech_timestamps, collect_chunks, vad_debug, current_streamming_time, recordingUtil
 
+    recordingUtil = RecordingUtil()
     current_streamming_time = 0
     FIRST = True
     STOP = False
