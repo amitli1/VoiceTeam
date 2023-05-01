@@ -50,8 +50,6 @@ def play_sound():
 
 
 
-
-
 def transcribe_chunk_live(audio):
     """
     This functions transcribe given audio chunk. It also determines the language of the chunk and append it to the
@@ -98,10 +96,12 @@ def inference_file(audio):
 
     # time.sleep(0.2)
     # amitli: when streaming is stopped -> we will clear the MIC thread queue
+    if settings.current_streamming_time == 0:
+        print("First time get into inference_file function")
     settings.current_streamming_time = datetime.now()
 
     if settings.FIRST and settings.streaming:
-        print('open thread')
+        print('open thread - realtime')
         thread1 = threading.Thread(target=realtime)
         thread1.start()
         settings.STOP = False
@@ -193,7 +193,7 @@ def realtime():
     Real time transcription of streaming audio. This function is being called from 'inference_file' and run on a thread.
     It updates the transcription, languages list and the current language.
     """
-    print('in real time')
+    print('Start realtime function')
     energy_threshold = 300
     record_timeout = 2
     phrase_timeout = 3
@@ -231,6 +231,7 @@ def realtime():
 
     # Create a background thread that will pass us raw audio bytes.
     # We could do this manually but SpeechRecognizer provides a nice helper.
+    print('Start reocording (using speech recognistion)')
     recorder.listen_in_background(source, record_callback, phrase_time_limit=record_timeout)
 
     while not settings.STOP:
@@ -272,6 +273,7 @@ def realtime():
                 # call whisper
                 result = transcribe_chunk_live(wav)
                 text = result['text'].strip()
+                print(f"Got Whisper Results: {text}, no_speech_prob = {result['no_speech_prob']}, language = {result['language']}")
                 settings.languages.append(settings.LANGUAGES[result['language']])
                 # if result['segments']:
                 if result['no_speech_prob'] > 0.75:
@@ -288,7 +290,7 @@ def realtime():
                     settings.transcription.append(text)
                 else:
                     settings.transcription[-1] = text
-                print(f"Full transcription so far:\n{settings.transcription}\n")
+                #print(f"Full transcription so far:\n{settings.transcription}\n")
 
                 if text != '':
                     settings.transcribe = ''
