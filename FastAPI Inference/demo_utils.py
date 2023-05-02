@@ -14,6 +14,7 @@ import speech_recognition as sr
 from tempfile import NamedTemporaryFile
 from datetime import datetime, timedelta
 import pandas as pd
+import re
 
 import settings
 
@@ -166,8 +167,26 @@ def inference_file(audio):
         print(f"detect langs ={settings.languages}")
         if len(settings.languages) > 0:
             settings.curr_lang = mode(settings.languages)
+
+    #html_text = prepaare_text(settings.transcribe)
     return settings.curr_lang, fig, gr.update(visible=True), settings.transcribe, \
            gr.update(visible=True), gr.update(visible=True)
+
+
+def prepaare_text(text):
+    '''
+        style text results in html format
+    '''
+    html_text = ""
+    reg = re.compile(r'[a-zA-Z]')
+    for i in range(len(text)):
+        if reg.match(text[i]):
+            current_line = f"<p style='text-align:right;'> {text[i]} </p>"
+        else:
+            current_line = f"<p style='text-align:left;'> {text[i]} </p>"
+        html_res = html_res + current_line + "\n"
+    return html_text
+
 
 def clear():
     """
