@@ -3,6 +3,7 @@ import os
 import numpy as np
 from scipy.io.wavfile import write
 from pathlib import Path
+import settings
 
 class RecordingUtil():
 
@@ -16,7 +17,8 @@ class RecordingUtil():
 
 
     def record_wav(self, audio):
-
+        if not settings.record_4_debug:
+            return
         self._counter    = self._counter + 1
         audio          = audio.numpy()
         audio          = np.int16(audio / np.max(np.abs(audio)) * 32767)  # scale

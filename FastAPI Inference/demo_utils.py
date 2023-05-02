@@ -213,7 +213,7 @@ def realtime():
     It updates the transcription, languages list and the current language.
     """
     print('Start realtime function')
-    energy_threshold = 300
+    energy_threshold = 100
     record_timeout = 2
     phrase_timeout = 3
 
@@ -250,16 +250,16 @@ def realtime():
 
     # Create a background thread that will pass us raw audio bytes.
     # We could do this manually but SpeechRecognizer provides a nice helper.
-    print('Start reocording (using speech recognistion)')
+    print('Start reocording (using speech recognision)')
     recorder.listen_in_background(source, record_callback, phrase_time_limit=record_timeout)
 
     while not settings.STOP:
         try:
 
-            current_time = datetime.now()
-            diff_in_seconds = (current_time - settings.current_streamming_time).seconds
-            if diff_in_seconds >= 1:
-                data_queue.queue.clear()
+            # current_time = datetime.now()
+            # diff_in_seconds = (current_time - settings.current_streamming_time).seconds
+            # if diff_in_seconds >= 1:
+            #     data_queue.queue.clear()
 
             now = datetime.utcnow()
             # Pull raw recorded audio from the queue.
@@ -291,17 +291,18 @@ def realtime():
 
                 # call whisper
                 result = transcribe_chunk_live(wav)
-                text = result['text'].strip()
-                print(f"Got Whisper Results: {text}, no_speech_prob = {result['no_speech_prob']}, language = {result['language']}")
+                text = result['text'].strip() 
                 settings.languages.append(settings.LANGUAGES[result['language']])
-                # if result['segments']:
-                if result['no_speech_prob'] > 0.75:
-                    print(f"No speech prob is too high ({result['no_speech_prob']}) => text will be empty")
-                    text = ''
-                if len(settings.languages) > 3:
+                compression_ratio = result['compression_ratio']
+                no_speech_prob = result['no_speech_prob']
+                avg_logprob = result['avg_logprob']
+                text = filter_bad_results(text, compression_ratio, no_speech_prob, avg_logprob)
+                
+                if len(settings.languages) > settings.num_lang_results:
                     settings.languages.pop(0)
 
-                settings.curr_lang = mode(settings.languages)
+                if len(settings.languages) == settings.num_lang_results:
+                    settings.curr_lang = mode(settings.languages)
 
                 # If we detected a pause between recordings, add a new item to our transcripion.
                 # Otherwise, edit the existing one.
@@ -310,6 +311,7 @@ def realtime():
                 else:
                     settings.transcription[-1] = text
                 #print(f"Full transcription so far:\n{settings.transcription}\n")
+                print(f"Last transcription :\n{text}\n")
 
                 if text != '':
                     settings.transcribe = ''
@@ -323,3 +325,22 @@ def realtime():
         except KeyboardInterrupt:
             break
     print('Out of real time')
+
+def filter_bad_results(text, compression_ratio, no_speech_prob, avg_logprob):
+    should_skip = False
+    if compression_ratio > settings.compression_ratio_threshold:
+        print("transcription aborted due to compression_ratio")
+        should_skip = True
+    if avg_logprob < settings.logprob_threshold:
+        print("transcription aborted due to avg_logprob")
+        should_skip = True
+    if no_speech_prob > settings.no_speech_threshold:
+        print("transcription aborted due to no_speech_prob")
+        should_skip = True
+    low_text = text.lower()
+    if 'thanks for watching' in low_text:
+        should_skip = True
+
+    if should_skip:
+        return ''
+    return text

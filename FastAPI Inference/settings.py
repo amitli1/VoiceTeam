@@ -1,5 +1,5 @@
 import torch
-import whisper 
+import whisper
 from recording_util import RecordingUtil
 
 def init_globals(static_url, live_url):
@@ -10,7 +10,9 @@ def init_globals(static_url, live_url):
     :return:
     """
     global audio_vec, transcribe, transcription, languages, curr_lang, vad, vad_iterator, STOP, FIRST, streaming,\
-           STATIC_URL, LIVE_URL, speech_probs, LANGUAGES, get_speech_timestamps, collect_chunks, vad_debug, current_streamming_time, recordingUtil
+           STATIC_URL, LIVE_URL, speech_probs, LANGUAGES, get_speech_timestamps, collect_chunks, vad_debug, \
+           current_streamming_time, recordingUtil, record_4_debug, num_lang_results, compression_ratio_threshold, logprob_threshold, \
+           no_speech_threshold
 
     recordingUtil = RecordingUtil()
     current_streamming_time = 0
@@ -25,6 +27,15 @@ def init_globals(static_url, live_url):
     languages = []
     STATIC_URL = static_url
     LIVE_URL = live_url
+    record_4_debug = False
+    # the number of detected languages results we need to decide the language. If we have less results, we do not decide the language.
+    # when we have enough, we keep the last num_lang_results and report it's mean
+    num_lang_results = 5
+    # the thresholds below are used to filter out invalid whisper transcriptions
+    compression_ratio_threshold = 2.4
+    logprob_threshold = -1.0
+    no_speech_threshold = 0.6
+
 
     vad, vad_utils = torch.hub.load(repo_or_dir='snakers4/silero-vad',
                                     model='silero_vad',
