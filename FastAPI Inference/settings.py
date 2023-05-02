@@ -2,7 +2,7 @@ import torch
 import whisper
 from recording_util import RecordingUtil
 
-def init_globals(static_url, live_url):
+def init_globals(live_url, run_local=True):
     """
     Initialize the global variables of the program.
     :param static_url:
@@ -12,7 +12,8 @@ def init_globals(static_url, live_url):
     global audio_vec, transcribe, transcription, languages, curr_lang, vad, vad_iterator, STOP, FIRST, streaming,\
            STATIC_URL, LIVE_URL, speech_probs, LANGUAGES, get_speech_timestamps, collect_chunks, vad_debug, \
            current_streamming_time, recordingUtil, record_4_debug, num_lang_results, compression_ratio_threshold, logprob_threshold, \
-           no_speech_threshold, settings_record_wav, settings_decoding_lang, settings_use_prompt
+           no_speech_threshold, settings_record_wav, settings_decoding_lang, settings_use_prompt, RUN_LOCAL, audio_model
+
 
     settings_record_wav = False
     settings_decoding_lang = None
@@ -28,7 +29,7 @@ def init_globals(static_url, live_url):
     transcribe = ''
     transcription = ['']
     languages = []
-    STATIC_URL = static_url
+    #STATIC_URL = static_url
     LIVE_URL = live_url
     record_4_debug = True
     # the number of detected languages results we need to decide the language. If we have less results, we do not decide the language.
@@ -38,7 +39,9 @@ def init_globals(static_url, live_url):
     compression_ratio_threshold = 2.4
     logprob_threshold = -1.0
     no_speech_threshold = 0.6
-
+    RUN_LOCAL = run_local
+    if RUN_LOCAL:
+        audio_model = whisper.load_model('large', 'cuda')
 
     vad, vad_utils = torch.hub.load(repo_or_dir='snakers4/silero-vad',
                                     model='silero_vad',

@@ -3,95 +3,6 @@ from demo_utils import *
 import gradio as gr
 import datetime
 
-css = """
-        .gradio-container {
-            font-family: 'IBM Plex Sans', sans-serif;
-        }
-        .gr-button {
-            color: white;
-            border-color: black;
-            background: black;
-        }
-        input[type='range'] {
-            accent-color: black;
-        }
-        .dark input[type='range'] {
-            accent-color: #dfdfdf;
-        }
-        .container {
-            max-width: 730px;
-            margin: auto;
-            padding-top: 1.5rem;
-        }
-
-        .details:hover {
-            text-decoration: underline;
-        }
-        .gr-button {
-            white-space: nowrap;
-        }
-        .gr-button:focus {
-            border-color: rgb(147 197 253 / var(--tw-border-opacity));
-            outline: none;
-            box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
-            --tw-border-opacity: 1;
-            --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
-            --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(3px var(--tw-ring-offset-width)) var(--tw-ring-color);
-            --tw-ring-color: rgb(191 219 254 / var(--tw-ring-opacity));
-            --tw-ring-opacity: .5;
-        }
-        .footer {
-            margin-bottom: 45px;
-            margin-top: 35px;
-            text-align: center;
-            border-bottom: 1px solid #e5e5e5;
-        }
-        .footer>p {
-            font-size: .8rem;
-            display: inline-block;
-            padding: 0 10px;
-            transform: translateY(10px);
-            background: white;
-        }
-        .dark .footer {
-            border-color: #303030;
-        }
-        .dark .footer>p {
-            background: #0b0f19;
-        }
-        .prompt h4{
-            margin: 1.25em 0 .25em 0;
-            font-weight: bold;
-            font-size: 115%;
-        }
-        .animate-spin {
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            from {
-                transform: rotate(0deg);
-            }
-            to {
-                transform: rotate(360deg);
-            }
-        }
-        #result-textarea_rtl
-        {
-         direction: rtl;
-        }
-        #share-btn-container {
-            display: flex; margin-top: 1.5rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem
-            !important; background-color: #000000; justify-content: center; align-items: center; border-radius: 9999px
-            !important; width: 13rem;
-        }
-        #share-btn {
-            all: initial; color: #ffffff;font-weight: 600; cursor:pointer; font-family: 'IBM Plex Sans', sans-serif;
-            margin-left: 0.5rem !important; padding-top: 0.25rem !important; padding-bottom: 0.25rem !important;
-        }
-        #share-btn * {
-            all: unset;
-        }
-"""
 
 def change_settings(settings_record_wav, settings_decoding_lang, settings_use_prompt):
     print(f"Settings changed to: Reocrd Wav: {settings_record_wav}, Decoding Lang: {settings_decoding_lang}, Decoding Prompt:{settings_use_prompt}")
@@ -104,8 +15,8 @@ def change_settings(settings_record_wav, settings_decoding_lang, settings_use_pr
         settings.settings_decoding_lang = "en"
 
 
-def gradio_main(static_url, live_url, debug_flag=False):
-    init_globals(static_url, live_url)
+def gradio_main(live_url, debug_flag=False, RUN_LOCAL=True):
+    init_globals(live_url, RUN_LOCAL)
 
     # block = gr.Blocks(css=css)
     block = gr.Blocks(theme=gr.themes.Glass())
@@ -214,8 +125,15 @@ def gradio_main(static_url, live_url, debug_flag=False):
                                                          settings_decoding_lang,
                                                          settings_use_prompt], outputs=[])
 
-    block.queue().launch(debug=debug_flag, )
-
+    # block.queue().launch(debug=debug_flag, )
+#for debugging on vitaly's computer
+    block.queue().launch(share=False,
+                        debug=debug_flag,
+                        server_name="0.0.0.0",
+                        server_port=8432,
+                        ssl_verify=False,
+                        ssl_certfile="cert.pem",
+                        ssl_keyfile="key.pem")
 
 # if __name__ == '__main__':
 #     main()

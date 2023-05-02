@@ -14,7 +14,7 @@ import speech_recognition as sr
 from tempfile import NamedTemporaryFile
 from datetime import datetime, timedelta
 import pandas as pd
-import re
+import whisper
 import numpy as np
 import settings
 
@@ -68,12 +68,13 @@ def transcribe_chunk_live(audio):
     num_of_samples_after_vad = len(audio)
     print(f"[transcribe_chunk_live]\n\tBefore VAD: {num_of_samples_before_vad} samples, {round(num_of_samples_before_vad/16000, 2)} seconds\n\tAfter VAD: {num_of_samples_after_vad} samples, {round(num_of_samples_after_vad/16000, 2)} seconds")
 
-    audio_data = {'wav': [str(i) for i in audio.tolist()], 'languages': [settings.settings_decoding_lang]}
-    # audio_data['languages'] =  settings.settings_decoding_lang
-    print(f"audio_data['languages']: {audio_data['languages']}")
-    res = requests.get(settings.LIVE_URL, json=audio_data)
+    audio_data = {'wav': [str(i) for i in audio.tolist()]}
+    if settings.RUN_LOCAL:
+        res = get_local_transcription(audio_data['wav'])[0]
+    else:
+        res = requests.get(settings.LIVE_URL, json=audio_data).json()[0]
 
-    return res.json()[0]
+    return res
 
 
 def transcribe_chunk(audio):
@@ -84,11 +85,23 @@ def transcribe_chunk(audio):
     :return: str: transcription
     """
     audio_data = {'wav': [str(i) for i in audio.tolist()], 'languages': settings.languages}
-    audio_data['language'] = settings.settings_decoding_lang
-    res = requests.get(settings.STATIC_URL, json=audio_data)
-    res = res.json()
-    trnscrb, settings.languages = res[0], res[1]
+    if settings.RUN_LOCAL:
+        res = get_local_transcription(audio_data['wav'])[0]
+        trnscrb = res.text.strip()
+    else:
+        res = requests.get(settings.LIVE_URL, json=audio_data)
+        res = res.json()[0]
+        trnscrb = res['text'].strip()
     return trnscrb
+
+
+def get_local_transcription(wav_list):
+        wav = [np.float(i) for i in wav_list]
+        audio = whisper.pad_or_trim(np.array(wav)).astype('float32')
+        mel = whisper.log_mel_spectrogram(audio).to('cuda')
+        options = whisper.DecodingOptions(fp16=False, task='transcribe', beam_size=5)
+        result = whisper.decode(settings.audio_model, mel, options)
+        return [result]
 
 
 def inference_file(audio):
@@ -295,11 +308,21 @@ def realtime():
                 wav = torch.from_numpy(audio_array)
                 # call whisper
                 result = transcribe_chunk_live(wav)
-                text = result['text'].strip() 
-                settings.languages.append(settings.LANGUAGES[result['language']])
-                compression_ratio = result['compression_ratio']
-                no_speech_prob = result['no_speech_prob']
-                avg_logprob = result['avg_logprob']
+                if settings.RUN_LOCAL:
+                    text = result.text.strip()
+                    res_lang = result.language
+                    compression_ratio = result.compression_ratio
+                    no_speech_prob = result.no_speech_prob
+                    avg_logprob = result.avg_logprob
+                else:
+                    text = result['text'].strip() 
+                    res_lang = result['language']
+                    compression_ratio = result['compression_ratio']
+                    no_speech_prob = result['no_speech_prob']
+                    avg_logprob = result['avg_logprob']
+                settings.languages.append(settings.LANGUAGES[res_lang])
+                
+               
                 text = filter_bad_results(text, compression_ratio, no_speech_prob, avg_logprob)
                 
                 if text != "":
