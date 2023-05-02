@@ -15,7 +15,7 @@ def init_globals(static_url, live_url):
            no_speech_threshold, settings_record_wav, settings_decoding_lang, settings_use_prompt
 
     settings_record_wav = False
-    settings_decoding_lang = []
+    settings_decoding_lang = None
     settings_use_prompt = False
     recordingUtil = RecordingUtil()
     current_streamming_time = 0

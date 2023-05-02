@@ -97,11 +97,11 @@ def change_settings(settings_record_wav, settings_decoding_lang, settings_use_pr
     print(f"Settings changed to: Reocrd Wav: {settings_record_wav}, Decoding Lang: {settings_decoding_lang}, Decoding Prompt:{settings_use_prompt}")
     settings.settings_record_wav = settings_record_wav
     settings.settings_use_prompt = settings_use_prompt
-    settings.settings_decoding_lang = []
+    settings.settings_decoding_lang = None
     if settings_decoding_lang == "Hebrew":
-        settings.settings_decoding_lang = ["he"]
+        settings.settings_decoding_lang = "he"
     elif settings_decoding_lang == "English":
-        settings.settings_decoding_lang = ["en"]
+        settings.settings_decoding_lang = "en"
 
 
 def gradio_main(static_url, live_url, debug_flag=False):
