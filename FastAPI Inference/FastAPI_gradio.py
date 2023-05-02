@@ -15,8 +15,8 @@ def change_settings(settings_record_wav, settings_decoding_lang, settings_use_pr
         settings.settings_decoding_lang = "en"
 
 
-def gradio_main(live_url, debug_flag=False, RUN_LOCAL=True):
-    init_globals(live_url, RUN_LOCAL)
+def gradio_main(debug_flag=False, run_local=True):
+    init_globals(run_local)
 
     # block = gr.Blocks(css=css)
     block = gr.Blocks(theme=gr.themes.Glass())
@@ -97,7 +97,7 @@ def gradio_main(live_url, debug_flag=False, RUN_LOCAL=True):
 
                 gr.HTML('''
                 <div class="footer">
-                            <p>Model by Moses team - Whisper Demo
+                            <p>Model by Audio team - Whisper Demo
                             </p>
                 </div>
                 ''')
@@ -125,15 +125,15 @@ def gradio_main(live_url, debug_flag=False, RUN_LOCAL=True):
                                                          settings_decoding_lang,
                                                          settings_use_prompt], outputs=[])
 
-    # block.queue().launch(debug=debug_flag, )
+    block.queue().launch(debug=debug_flag, )
 #for debugging on vitaly's computer
-    block.queue().launch(share=False,
-                        debug=debug_flag,
-                        server_name="0.0.0.0",
-                        server_port=8432,
-                        ssl_verify=False,
-                        ssl_certfile="cert.pem",
-                        ssl_keyfile="key.pem")
+    # block.queue().launch(share=False,
+    #                     debug=debug_flag,
+    #                     server_name="0.0.0.0",
+    #                     server_port=8432,
+    #                     ssl_verify=False,
+    #                     ssl_certfile="cert.pem",
+    #                     ssl_keyfile="key.pem")
 
 # if __name__ == '__main__':
 #     main()

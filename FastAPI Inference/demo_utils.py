@@ -14,6 +14,7 @@ import speech_recognition as sr
 from tempfile import NamedTemporaryFile
 from datetime import datetime, timedelta
 import pandas as pd
+import re
 import whisper
 import numpy as np
 import settings
@@ -60,20 +61,23 @@ def transcribe_chunk_live(audio):
     """
 
     settings.recordingUtil.record_wav(audio)
-
     num_of_samples_before_vad = len(audio)
+    start = time.time()
     speech_timestamps = settings.get_speech_timestamps(audio, settings.vad_debug, sampling_rate=16000)
     if len(speech_timestamps) != 0:
         audio             = settings.collect_chunks(speech_timestamps, audio)
+    end = time.time()
     num_of_samples_after_vad = len(audio)
-    print(f"[transcribe_chunk_live]\n\tBefore VAD: {num_of_samples_before_vad} samples, {round(num_of_samples_before_vad/16000, 2)} seconds\n\tAfter VAD: {num_of_samples_after_vad} samples, {round(num_of_samples_after_vad/16000, 2)} seconds")
+    print(f"[transcribe_chunk_live]: VAD took {end - start} seconds\n\tBefore VAD: {round(num_of_samples_before_vad/16000, 2)} seconds\n\tAfter VAD: {round(num_of_samples_after_vad/16000, 2)} seconds")
+    start = time.time()
 
-    audio_data = {'wav': [str(i) for i in audio.tolist()]}
+    audio_data = {'wav': [str(i) for i in audio.tolist()], 'languages': [settings.settings_decoding_lang]}
     if settings.RUN_LOCAL:
         res = get_local_transcription(audio_data['wav'])[0]
     else:
         res = requests.get(settings.LIVE_URL, json=audio_data).json()[0]
-
+    end = time.time()
+    print(f"[transcribe_chunk_live]: transcribe took {end - start} seconds")
     return res
 
 
@@ -84,7 +88,8 @@ def transcribe_chunk(audio):
     :param audio:
     :return: str: transcription
     """
-    audio_data = {'wav': [str(i) for i in audio.tolist()], 'languages': settings.languages}
+    audio_data = {'wav': [str(i) for i in audio.tolist()]}
+    audio_data['language'] = settings.settings_decoding_lang
     if settings.RUN_LOCAL:
         res = get_local_transcription(audio_data['wav'])[0]
         trnscrb = res.text.strip()

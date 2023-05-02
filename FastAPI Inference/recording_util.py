@@ -8,6 +8,8 @@ import settings
 class RecordingUtil():
 
     def __init__(self):
+        if False == settings.settings_record_wav :
+            return
         self._counter = 0
         current_time = datetime.datetime.now()
         self._recording_path = f"{os.path.expanduser('~')}/Downloads/Voice_Team/{current_time.year}_{current_time.month}_{current_time.day}_{current_time.hour}_{current_time.minute}_{current_time.second}"
