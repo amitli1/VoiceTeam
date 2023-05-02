@@ -12,8 +12,11 @@ def init_globals(static_url, live_url):
     global audio_vec, transcribe, transcription, languages, curr_lang, vad, vad_iterator, STOP, FIRST, streaming,\
            STATIC_URL, LIVE_URL, speech_probs, LANGUAGES, get_speech_timestamps, collect_chunks, vad_debug, \
            current_streamming_time, recordingUtil, record_4_debug, num_lang_results, compression_ratio_threshold, logprob_threshold, \
-           no_speech_threshold
+           no_speech_threshold, settings_record_wav, settings_decoding_lang, settings_use_prompt
 
+    settings_record_wav = False
+    settings_decoding_lang = []
+    settings_use_prompt = False
     recordingUtil = RecordingUtil()
     current_streamming_time = 0
     FIRST = True
