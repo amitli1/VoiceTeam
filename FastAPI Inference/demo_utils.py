@@ -216,8 +216,8 @@ def realtime():
     """
     print('Start realtime function')
     energy_threshold = 100
-    record_timeout = 2
-    phrase_timeout = 3
+    phrase_time_limit = 2
+    pause_timeout = 5
 
 
     temp_file = NamedTemporaryFile().name
@@ -253,15 +253,20 @@ def realtime():
     # Create a background thread that will pass us raw audio bytes.
     # We could do this manually but SpeechRecognizer provides a nice helper.
     print('Start reocording (using speech recognision)')
-    recorder.listen_in_background(source, record_callback, phrase_time_limit=record_timeout)
+    # The ``phrase_time_limit`` parameter is the maximum number of seconds that 
+    # this will allow a phrase to continue before stopping and returning the part 
+    # of the phrase processed before the time limit was reached. The resulting audio 
+    # will be the phrase cut off at the time limit. If ``phrase_timeout`` is ``None``, 
+    # there will be no phrase time limit.
+    recorder.listen_in_background(source, record_callback, phrase_time_limit=phrase_time_limit)
 
     while not settings.STOP:
         try:
 
-            # current_time = datetime.now()
-            # diff_in_seconds = (current_time - settings.current_streamming_time).seconds
-            # if diff_in_seconds >= 1:
-            #     data_queue.queue.clear()
+            current_time = datetime.now()
+            diff_in_seconds = (current_time - settings.current_streamming_time).seconds
+            if diff_in_seconds >= 1:
+                data_queue.queue.clear()
 
             now = datetime.utcnow()
             # Pull raw recorded audio from the queue.
@@ -269,7 +274,7 @@ def realtime():
                 phrase_complete = False
                 # If enough time has passed between recordings, consider the phrase complete.
                 # Clear the current working audio buffer to start over with the new data.
-                if phrase_time and now - phrase_time > timedelta(seconds=phrase_timeout):
+                if phrase_time and now - phrase_time > timedelta(seconds=pause_timeout):
                     last_sample = bytes()
                     phrase_complete = True
                 # This is the last time we received new audio data from the queue.
