@@ -69,6 +69,7 @@ def transcribe_chunk_live(audio):
     print(f"[transcribe_chunk_live]\n\tBefore VAD: {num_of_samples_before_vad} samples, {round(num_of_samples_before_vad/16000, 2)} seconds\n\tAfter VAD: {num_of_samples_after_vad} samples, {round(num_of_samples_after_vad/16000, 2)} seconds")
 
     audio_data = {'wav': [str(i) for i in audio.tolist()]}
+    audio_data['language'] =  settings.settings_decoding_lang
     res = requests.get(settings.LIVE_URL, json=audio_data)
 
     return res.json()[0]
@@ -82,6 +83,7 @@ def transcribe_chunk(audio):
     :return: str: transcription
     """
     audio_data = {'wav': [str(i) for i in audio.tolist()], 'languages': settings.languages}
+    audio_data['language'] = settings.settings_decoding_lang
     res = requests.get(settings.STATIC_URL, json=audio_data)
     res = res.json()
     trnscrb, settings.languages = res[0], res[1]

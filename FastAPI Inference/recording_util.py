@@ -12,12 +12,11 @@ class RecordingUtil():
         current_time = datetime.datetime.now()
         self._recording_path = f"{os.path.expanduser('~')}/Downloads/Voice_Team/{current_time.year}_{current_time.month}_{current_time.day}_{current_time.hour}_{current_time.minute}_{current_time.second}"
         print(f"[RecordingUtil] Create folder: {self._recording_path}")
-        #os.makedirs(self._recording_path)
         Path(self._recording_path).mkdir(parents=True, exist_ok=True)
 
 
     def record_wav(self, audio):
-        if not settings.record_4_debug:
+        if False == settings.settings_record_wav :
             return
         self._counter    = self._counter + 1
         audio          = audio.numpy()
@@ -26,8 +25,3 @@ class RecordingUtil():
         print(f"Record to file: {full_fill_name}")
         write(full_fill_name, 16000, audio)
 
-
-
-# if __name__ == "__main__":
-#     recUtil = RecordingUtil()
-#     recUtil.record_wav(np.array([10, 20, 30]))
