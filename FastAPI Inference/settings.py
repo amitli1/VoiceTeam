@@ -27,7 +27,7 @@ def init_globals(static_url, live_url):
     languages = []
     STATIC_URL = static_url
     LIVE_URL = live_url
-    record_4_debug = False
+    record_4_debug = True
     # the number of detected languages results we need to decide the language. If we have less results, we do not decide the language.
     # when we have enough, we keep the last num_lang_results and report it's mean
     num_lang_results = 5
