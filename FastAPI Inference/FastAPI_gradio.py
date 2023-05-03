@@ -103,6 +103,7 @@ def change_settings(settings_record_wav, settings_decoding_lang, settings_use_pr
     elif settings_decoding_lang == "English":
         settings.settings_decoding_lang = ["en"]
 
+
 def gradio_main(static_url, live_url, debug_flag=False):
     init_globals(static_url, live_url)
 
@@ -186,7 +187,7 @@ def gradio_main(static_url, live_url, debug_flag=False):
 
                 gr.HTML('''
                 <div class="footer">
-                            <p>Model by Moses team - Whisper Demo
+                            <p>Model by Audio team - Whisper Demo
                             </p>
                 </div>
                 ''')
@@ -215,7 +216,14 @@ def gradio_main(static_url, live_url, debug_flag=False):
                                                          settings_use_prompt], outputs=[])
 
     block.queue().launch(debug=debug_flag, )
-
+#for debugging on vitaly's computer
+    # block.queue().launch(share=False,
+    #                     debug=debug_flag,
+    #                     server_name="0.0.0.0",
+    #                     server_port=8432,
+    #                     ssl_verify=False,
+    #                     ssl_certfile="cert.pem",
+    #                     ssl_keyfile="key.pem")
 
 # if __name__ == '__main__':
 #     main()

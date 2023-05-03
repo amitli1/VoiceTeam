@@ -15,7 +15,8 @@ from tempfile import NamedTemporaryFile
 from datetime import datetime, timedelta
 import pandas as pd
 import re
-
+import whisper
+import numpy as np
 import settings
 
 
@@ -60,19 +61,24 @@ def transcribe_chunk_live(audio):
     """
 
     settings.recordingUtil.record_wav(audio)
-
     num_of_samples_before_vad = len(audio)
+    start = time.time()
     speech_timestamps = settings.get_speech_timestamps(audio, settings.vad_debug, sampling_rate=16000)
     if len(speech_timestamps) != 0:
         audio             = settings.collect_chunks(speech_timestamps, audio)
+    end = time.time()
     num_of_samples_after_vad = len(audio)
-    print(f"[transcribe_chunk_live]\n\tBefore VAD: {num_of_samples_before_vad} samples, {round(num_of_samples_before_vad/16000, 2)} seconds\n\tAfter VAD: {num_of_samples_after_vad} samples, {round(num_of_samples_after_vad/16000, 2)} seconds")
+    print(f"[transcribe_chunk_live]: VAD took {end - start} seconds\n\tBefore VAD: {round(num_of_samples_before_vad/16000, 2)} seconds\n\tAfter VAD: {round(num_of_samples_after_vad/16000, 2)} seconds")
+    start = time.time()
 
-    audio_data = {'wav': [str(i) for i in audio.tolist()]}
-    audio_data['language'] =  settings.settings_decoding_lang
-    res = requests.get(settings.LIVE_URL, json=audio_data)
-
-    return res.json()[0]
+    audio_data = {'wav': [str(i) for i in audio.tolist()], 'languages': [settings.settings_decoding_lang]}
+    if settings.RUN_LOCAL:
+        res = get_local_transcription(audio_data['wav'])[0]
+    else:
+        res = requests.get(settings.LIVE_URL, json=audio_data).json()[0]
+    end = time.time()
+    print(f"[transcribe_chunk_live]: transcribe took {end - start} seconds")
+    return res
 
 
 def transcribe_chunk(audio):
@@ -82,12 +88,25 @@ def transcribe_chunk(audio):
     :param audio:
     :return: str: transcription
     """
-    audio_data = {'wav': [str(i) for i in audio.tolist()], 'languages': settings.languages}
+    audio_data = {'wav': [str(i) for i in audio.tolist()]}
     audio_data['language'] = settings.settings_decoding_lang
-    res = requests.get(settings.STATIC_URL, json=audio_data)
-    res = res.json()
-    trnscrb, settings.languages = res[0], res[1]
+    if settings.RUN_LOCAL:
+        res = get_local_transcription(audio_data['wav'])[0]
+        trnscrb = res.text.strip()
+    else:
+        res = requests.get(settings.LIVE_URL, json=audio_data)
+        res = res.json()[0]
+        trnscrb = res['text'].strip()
     return trnscrb
+
+
+def get_local_transcription(wav_list):
+        wav = [np.float(i) for i in wav_list]
+        audio = whisper.pad_or_trim(np.array(wav)).astype('float32')
+        mel = whisper.log_mel_spectrogram(audio).to('cuda')
+        options = whisper.DecodingOptions(fp16=False, task='transcribe', beam_size=5)
+        result = whisper.decode(settings.audio_model, mel, options)
+        return [result]
 
 
 def inference_file(audio):
@@ -287,43 +306,53 @@ def realtime():
 
                 # Use AudioData to convert the raw data to wav data.
                 audio_data = sr.AudioData(last_sample, source.SAMPLE_RATE, source.SAMPLE_WIDTH)
-                wav_data = io.BytesIO(audio_data.get_wav_data())
-
-                # Write wav data to the temporary file as bytes.
-                with open(temp_file, 'w+b') as f:
-                    f.write(wav_data.read())
-
-                # Read the transcription.
-                wav = torch.from_numpy(librosa.load(temp_file, sr=16000)[0])
-
+                wav_bytes = audio_data.get_wav_data(convert_rate=16000)
+                wav_stream = io.BytesIO(wav_bytes)
+                audio_array, sampling_rate = sf.read(wav_stream)
+                audio_array = audio_array.astype(np.float32)
+                wav = torch.from_numpy(audio_array)
                 # call whisper
                 result = transcribe_chunk_live(wav)
-                text = result['text'].strip() 
-                settings.languages.append(settings.LANGUAGES[result['language']])
-                compression_ratio = result['compression_ratio']
-                no_speech_prob = result['no_speech_prob']
-                avg_logprob = result['avg_logprob']
+                if settings.RUN_LOCAL:
+                    text = result.text.strip()
+                    res_lang = result.language
+                    compression_ratio = result.compression_ratio
+                    no_speech_prob = result.no_speech_prob
+                    avg_logprob = result.avg_logprob
+                else:
+                    text = result['text'].strip() 
+                    res_lang = result['language']
+                    compression_ratio = result['compression_ratio']
+                    no_speech_prob = result['no_speech_prob']
+                    avg_logprob = result['avg_logprob']
+                settings.languages.append(settings.LANGUAGES[res_lang])
+                
+               
                 text = filter_bad_results(text, compression_ratio, no_speech_prob, avg_logprob)
                 
-                if len(settings.languages) > settings.num_lang_results:
-                    settings.languages.pop(0)
+                if text != "":
+                    if len(settings.languages) > settings.num_lang_results:
+                        settings.languages.pop(0)
 
-                if len(settings.languages) == settings.num_lang_results:
-                    settings.curr_lang = mode(settings.languages)
+                    if len(settings.languages) == settings.num_lang_results:
+                        settings.curr_lang = mode(settings.languages)
 
-                # If we detected a pause between recordings, add a new item to our transcripion.
-                # Otherwise, edit the existing one.
-                if phrase_complete:
-                    settings.transcription.append(text)
-                else:
-                    settings.transcription[-1] = text
-                #print(f"Full transcription so far:\n{settings.transcription}\n")
-                print(f"Last transcription :\n{text}\n")
+                    # If we detected a pause between recordings, add a new item to our transcripion.
+                    # Otherwise, edit the existing one.
+                    if phrase_complete:
+                        print("phrase_complete")
+                        settings.transcription.append(text)
+                    else:
+                        print("replacing the last line with the current text:")
+                        settings.transcription[-1] = text
 
-                if text != '':
-                    settings.transcribe = ''
-                    for line in settings.transcription:
-                        settings.transcribe += line + '\n'
+                    #print(f"Full transcription so far:\n{settings.transcription}\n")
+                    print(f"Last transcription :\n{text}\n")
+
+                    if text != '':
+                        settings.transcribe = ''
+                        for line in settings.transcription:
+                            settings.transcribe += line + '\n'
 
 
                 # Infinite loops are bad for processors, must sleep.
@@ -335,6 +364,11 @@ def realtime():
 
 def filter_bad_results(text, compression_ratio, no_speech_prob, avg_logprob):
     should_skip = False
+
+    print(f"compression_ratio: {compression_ratio}")
+    print(f"no_speech_prob: {no_speech_prob}")
+    print(f"avg_logprob: {avg_logprob}")
+
     if compression_ratio > settings.compression_ratio_threshold:
         print("transcription aborted due to compression_ratio")
         should_skip = True
@@ -345,7 +379,7 @@ def filter_bad_results(text, compression_ratio, no_speech_prob, avg_logprob):
         print("transcription aborted due to no_speech_prob")
         should_skip = True
     low_text = text.lower()
-    if 'thanks for watching' in low_text:
+    if 'thanks for watching' in low_text or 'thank you for watching' in low_text:
         should_skip = True
 
     if should_skip:
