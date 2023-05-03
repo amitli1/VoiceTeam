@@ -20,7 +20,7 @@ import re
 import whisper
 import numpy as np
 import settings
-
+import traceback
 
 def change_audio(audio_type):
     """
@@ -68,7 +68,7 @@ def transcribe_chunk_live(audio):
     """
 
     try:
-        settings.recordingUtil.record_wav(audio)
+        # settings.recordingUtil.record_wav(audio)
         num_of_samples_before_vad = len(audio)
         start = time.time()
         speech_timestamps = settings.get_speech_timestamps(audio, settings.vad_debug, sampling_rate=16000)
@@ -79,7 +79,7 @@ def transcribe_chunk_live(audio):
         print(f"[transcribe_chunk_live]: VAD2 took {end - start} seconds\n\tBefore VAD: {round(num_of_samples_before_vad/16000, 2)} seconds\n\tAfter VAD: {round(num_of_samples_after_vad/16000, 2)} seconds")
         start = time.time()
 
-        audio_data = {'wav': [str(i) for i in audio.tolist()], 'languages': [settings.settings_decoding_lang]}
+        audio_data = {'wav': [str(i) for i in audio.tolist()], 'languages': settings.settings_decoding_lang}
         if settings.RUN_LOCAL:
             res = get_local_transcription(audio_data['wav'])[0]
         else:
@@ -93,6 +93,7 @@ def transcribe_chunk_live(audio):
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
         print(exc_type, fname, exc_tb.tb_lineno)
+        print(traceback.format_exc())
 
         print("\n\n\n\n")
         print("\nError in transcribe_chunk_live\n")
@@ -273,15 +274,7 @@ def realtime():
     It updates the transcription, languages list and the current language.
     """
     print('Start realtime function')
-    energy_threshold = 100
-    phrase_time_limit = 2
-    pause_timeout = 5
 
-
-    temp_file = NamedTemporaryFile().name
-
-    # The last time a recording was retrieved from the queue.
-    phrase_time = None
     # Current raw audio bytes.
     last_sample = bytes()
     # Thread safe Queue for passing data from the threaded recording callback.
@@ -289,13 +282,13 @@ def realtime():
 
     # We use SpeechRecognizer to record our audio because it has a nice feature where it can detect when speech ends.
     recorder = sr.Recognizer()
-    recorder.energy_threshold = energy_threshold
+    recorder.energy_threshold = 100 # minimum audio energy to consider for recording
     # Definitely do this, dynamic energy compensation lowers the energy threshold dramatically to a point where the SpeechRecognizer never stops recording.
     recorder.dynamic_energy_threshold = False
 
     source = sr.Microphone(sample_rate=16000)
     with source:
-        recorder.adjust_for_ambient_noise(source)
+        recorder.adjust_for_ambient_noise(source) # we only need to calibrate once, before we start listening
 
     def record_callback(_, audio:sr.AudioData) -> None:
         """
@@ -307,24 +300,31 @@ def realtime():
         temp_data = audio.get_raw_data()
 
         data_queue.put(temp_data)
+        print("Added to the data_queue")
 
     # Create a background thread that will pass us raw audio bytes.
     # We could do this manually but SpeechRecognizer provides a nice helper.
     print('Start reocording (using speech recognision)')
     # The ``phrase_time_limit`` parameter is the maximum number of seconds that 
     # this will allow a phrase to continue before stopping and returning the part 
-    # of the phrase processed before the time limit was reached. The resulting audio 
-    # will be the phrase cut off at the time limit. If ``phrase_timeout`` is ``None``, 
+    # of the phrase processed before the time limit was reached. 
+    # The resulting audio will be the phrase cut off at the time limit. If ``phrase_timeout`` is ``None``, 
     # there will be no phrase time limit.
-    recorder.listen_in_background(source, record_callback, phrase_time_limit=phrase_time_limit)
+    phrase_time_limit = 2
+    stop_listening = recorder.listen_in_background(source, record_callback, phrase_time_limit=phrase_time_limit)
 
+    # pause_timeout = 5
+    pause_timeout = 3
+    # The last time a recording was retrieved from the queue.
+    last_phrase_time = None
     while not settings.STOP:
         try:
 
-            current_time = datetime.now()
-            diff_in_seconds = (current_time - settings.current_streamming_time).seconds
-            if diff_in_seconds >= 1:
-                data_queue.queue.clear()
+            # current_time = datetime.now()
+            # diff_in_seconds = (current_time - settings.current_streamming_time).seconds
+            # if diff_in_seconds >= 1:
+            #     print("Cleaning the data_queue!!!!!")
+            #     data_queue.queue.clear()
 
             now = datetime.utcnow()
             # Pull raw recorded audio from the queue.
@@ -332,22 +332,25 @@ def realtime():
                 phrase_complete = False
                 # If enough time has passed between recordings, consider the phrase complete.
                 # Clear the current working audio buffer to start over with the new data.
-                if phrase_time and now - phrase_time > timedelta(seconds=pause_timeout):
+                if last_phrase_time is not None:
+                    print(f"Time passed between recordings: {now - last_phrase_time}")
+                if last_phrase_time and now - last_phrase_time > timedelta(seconds=pause_timeout):
                     last_sample = bytes()
+                    print("phrase completed! last_sample reset!")
                     phrase_complete = True
                 # This is the last time we received new audio data from the queue.
-                phrase_time = now
+                last_phrase_time = now
 
                 # Concatenate our current audio data with the latest audio data.
                 while not data_queue.empty():
                     data = data_queue.get()
                     last_sample += data
-
+                print("Got everything from the data queue")
                 # Use AudioData to convert the raw data to wav data.
                 audio_data = sr.AudioData(last_sample, source.SAMPLE_RATE, source.SAMPLE_WIDTH)
                 wav_bytes = audio_data.get_wav_data(convert_rate=16000)
                 wav_stream = io.BytesIO(wav_bytes)
-                audio_array, sampling_rate = sf.read(wav_stream)
+                audio_array, _ = sf.read(wav_stream)
                 audio_array = audio_array.astype(np.float32)
                 wav = torch.from_numpy(audio_array)
                 # call whisper
@@ -371,18 +374,16 @@ def realtime():
                         compression_ratio = result['compression_ratio']
                         no_speech_prob = result['no_speech_prob']
                         avg_logprob = result['avg_logprob']
-                settings.languages.append(settings.LANGUAGES[res_lang])
-
-                print(f"Before filter bad results, text: {text}")
-                res_text = filter_bad_results(text, compression_ratio, no_speech_prob, avg_logprob)
-                print(f"After filter bad results, text: {text}")
-                if len(text) > 0 and len(res_text) == 0:
-                    settings.recordingUtil.record_wav_for_investigation(wav)
-                text = res_text
+                        settings.recordingUtil.record_wav(wav, no_speech_prob)
+                    if len(res_lang) > 0:
+                        settings.languages.append(settings.LANGUAGES[res_lang])
+                    
                 
-                if text != "":
-                    if len(settings.languages) > settings.num_lang_results:
-                        settings.languages.pop(0)
+                    text = filter_bad_results(text, compression_ratio, no_speech_prob, avg_logprob)
+                    
+                    if text != "":
+                        if len(settings.languages) > settings.num_lang_results:
+                            settings.languages.pop(0)
 
                     if len(settings.languages) == settings.num_lang_results:
                         settings.curr_lang = mode(settings.languages)
@@ -408,7 +409,7 @@ def realtime():
 
 
                 # Infinite loops are bad for processors, must sleep.
-                time.sleep(0.25)
+                time.sleep(0.05)
         except Exception as e:
             print("\n\n\n")
             print("\n\n\n*****************************************************\n\n\n")
@@ -420,9 +421,18 @@ def realtime():
             print("\n\n\n")
         except KeyboardInterrupt:
             break
+    if settings.STOP:
+        stop_listening(wait_for_stop=False)
+        print("Stopped the listening&recording thread!")
     print('Out of real time')
 
 def filter_bad_results(text, compression_ratio, no_speech_prob, avg_logprob):
+    bad_expressions = \
+    ['thanks for watching', 
+    'thank you for watching', 
+    'Share this video with your friends on social media'.lower(),
+    'MBC 뉴스 이덕영입니다'.lower()]
+
     should_skip = False
 
     print(f"compression_ratio: {compression_ratio}")
@@ -439,9 +449,13 @@ def filter_bad_results(text, compression_ratio, no_speech_prob, avg_logprob):
         print("\ttranscription aborted due to no_speech_prob")
         should_skip = True
     low_text = text.lower()
-    if 'thanks for watching' in low_text or 'thank you for watching' in low_text:
-        should_skip = True
+
+    for exp in bad_expressions:
+        if exp in text.lower():
+            should_skip = True
+            break
 
     if should_skip:
+        print(f"Skipped but the text was: {text}")
         return ''
     return text

@@ -33,13 +33,13 @@ class RecordingUtil():
             with open(full_fill_name, "w") as outfile:
                 outfile.write(json_object)
 
-    def record_wav(self, audio):
+    def record_wav(self, audio, no_speech_prob):
         if False == settings.settings_record_wav :
             return
         self._counter    = self._counter + 1
         audio          = audio.numpy()
         audio          = np.int16(audio / np.max(np.abs(audio)) * 32767)  # scale
-        full_fill_name = f"{self._recording_path}/{self._counter}.wav"
+        full_fill_name = f"{self._recording_path}/{self._counter}_{round(no_speech_prob,3)}.wav"
         print(f"Record to file: {full_fill_name}")
         write(full_fill_name, 16000, audio)
 

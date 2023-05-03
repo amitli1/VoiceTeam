@@ -101,7 +101,7 @@ def change_settings(settings_record_wav, settings_decoding_lang, settings_use_pr
     settings.settings_record_wav = settings_record_wav
     settings.settings_use_prompt = settings_use_prompt
     settings.settings_record_errors = settings_record_errors
-    settings.settings_decoding_lang = []
+    settings.settings_decoding_lang = [None]
     if settings_decoding_lang == "Hebrew":
         settings.settings_decoding_lang = ["he"]
     elif settings_decoding_lang == "English":
