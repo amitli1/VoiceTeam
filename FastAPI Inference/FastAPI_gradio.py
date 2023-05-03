@@ -103,7 +103,6 @@ def change_settings(settings_record_wav, settings_decoding_lang, settings_use_pr
     elif settings_decoding_lang == "English":
         settings.settings_decoding_lang = ["en"]
 
-
 def gradio_main(static_url, live_url, debug_flag=False):
     init_globals(static_url, live_url)
 
@@ -168,6 +167,7 @@ def gradio_main(static_url, live_url, debug_flag=False):
 
                 text = gr.Textbox(show_label=True, elem_id="result-textarea", label = "Detected Language:")
                 text2 = gr.Textbox(show_label=True, elem_id="result-textarea_rtl", label = "Transcription:")
+                #text2 = gr.TextArea(show_label=True, elem_id="result-textarea_rtl", label="Transcription:")
 
                 plot = gr.Plot(show_label=False, visible=False)
 
