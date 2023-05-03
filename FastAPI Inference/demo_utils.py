@@ -96,7 +96,7 @@ def transcribe_chunk_live(audio):
 
         print("\n\n\n\n")
         print("\nError in transcribe_chunk_live\n")
-        settings.recordingUtil.record_wav_for_investigation(audio, must_record=True)
+        settings.recordingUtil.record_wav_for_investigation(audio, must_record=True, json_data=audio_data)
         print(f"\naudio type = {type(audio)}\n")
         print(f"\naudio len = {len(audio)}\n")
         print(f"\nspeech_timestamps = {speech_timestamps}")
