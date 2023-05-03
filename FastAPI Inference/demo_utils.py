@@ -68,7 +68,7 @@ def transcribe_chunk_live(audio):
         audio             = settings.collect_chunks(speech_timestamps, audio)
     end = time.time()
     num_of_samples_after_vad = len(audio)
-    print(f"[transcribe_chunk_live]: VAD took {end - start} seconds\n\tBefore VAD: {round(num_of_samples_before_vad/16000, 2)} seconds\n\tAfter VAD: {round(num_of_samples_after_vad/16000, 2)} seconds")
+    print(f"[transcribe_chunk_live]: VAD2 took {end - start} seconds\n\tBefore VAD: {round(num_of_samples_before_vad/16000, 2)} seconds\n\tAfter VAD: {round(num_of_samples_after_vad/16000, 2)} seconds")
     start = time.time()
 
     audio_data = {'wav': [str(i) for i in audio.tolist()], 'languages': [settings.settings_decoding_lang]}
@@ -133,6 +133,7 @@ def inference_file(audio):
     window_size_samples = 1600
     x = []
     y = []
+    start_time = time.time()
     for i in range(0, len(wav), window_size_samples):
         chunk = wav[i: i + window_size_samples]
         if len(chunk) < window_size_samples:
@@ -144,6 +145,9 @@ def inference_file(audio):
     if len(speech_probs) > 300:
         speech_probs = speech_probs[-300:]
     settings.vad_iterator.reset_states()
+    end_time = time.time()
+    print(f"[inference_file]: VAD1 took {end_time - start_time} seconds")
+
     sample_per_sec = 16000 / window_size_samples
     if not settings.streaming:
         j = max(0, len(wav) // 16000 - 30)
