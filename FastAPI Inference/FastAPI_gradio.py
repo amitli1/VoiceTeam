@@ -93,10 +93,14 @@ css = """
         }
 """
 
-def change_settings(settings_record_wav, settings_decoding_lang, settings_use_prompt):
-    print(f"Settings changed to: Reocrd Wav: {settings_record_wav}, Decoding Lang: {settings_decoding_lang}, Decoding Prompt:{settings_use_prompt}")
+def change_settings(settings_record_wav, settings_decoding_lang, settings_use_prompt, settings_record_errors):
+    print(f"Settings changed to: Reocrd Wav: {settings_record_wav}, "
+          f"Decoding Lang: {settings_decoding_lang}, "
+          f"Decoding Prompt:{settings_use_prompt}, "
+          f"settings_record_errors: {settings_record_errors}")
     settings.settings_record_wav = settings_record_wav
     settings.settings_use_prompt = settings_use_prompt
+    settings.settings_record_errors = settings_record_errors
     settings.settings_decoding_lang = []
     if settings_decoding_lang == "Hebrew":
         settings.settings_decoding_lang = ["he"]
@@ -204,18 +208,31 @@ def gradio_main(debug_flag=False, run_local=True):
             settings_record_wav    = gr.Checkbox(label="Record WAV", info="Record WAV files for debug")
             settings_decoding_lang = gr.Dropdown(["None", "Hebrew", "English"], label="DecodingLanguage", info="Run Whisper with language decoding")
             settings_use_prompt    = gr.Checkbox(label="Use Whisper prompt", info="Run Whisper with prompt decoding")
+            settings_record_errors = gr.Checkbox(label="Record WAV On errors", info="Record for later debug")
 
             settings_record_wav.change(change_settings, inputs=[settings_record_wav,
                                                          settings_decoding_lang,
-                                                         settings_use_prompt], outputs=[])
+                                                         settings_use_prompt,
+                                                         settings_record_errors], outputs=[])
 
             settings_decoding_lang.change(change_settings, inputs=[settings_record_wav,
                                                          settings_decoding_lang,
-                                                         settings_use_prompt], outputs=[])
+                                                         settings_use_prompt,
+                                                         settings_record_errors], outputs=[])
 
             settings_use_prompt.change(change_settings, inputs=[settings_record_wav,
                                                          settings_decoding_lang,
-                                                         settings_use_prompt], outputs=[])
+                                                         settings_use_prompt,
+                                                        settings_record_errors], outputs=[])
+
+            settings_record_errors.change(change_settings, inputs=[settings_record_wav,
+                                                                settings_decoding_lang,
+                                                                settings_use_prompt,
+                                                                settings_record_errors], outputs=[])
+
+        with gr.Tab("Version"):
+            gr.Label("Version 1.0")
+
 
     block.queue().launch(debug=debug_flag, )
 #for debugging on vitaly's computer

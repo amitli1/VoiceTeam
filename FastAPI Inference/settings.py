@@ -12,12 +12,15 @@ def init_globals(run_local=True):
     global audio_vec, transcribe, transcription, languages, curr_lang, vad, vad_iterator, STOP, FIRST, streaming,\
            STATIC_URL, LIVE_URL, speech_probs, LANGUAGES, get_speech_timestamps, collect_chunks, vad_debug, \
            current_streamming_time, recordingUtil, record_4_debug, num_lang_results, compression_ratio_threshold, logprob_threshold, \
-           no_speech_threshold, settings_record_wav, settings_decoding_lang, settings_use_prompt, RUN_LOCAL, audio_model, html_transcribe,  transcription_lang
+           no_speech_threshold, settings_record_wav, settings_decoding_lang, settings_use_prompt, RUN_LOCAL, audio_model, html_transcribe,  transcription_lang, \
+            settings_record_for_inverstigation, settings_record_text_to_file, l_phrases
 
 
     settings_record_wav = False
     settings_decoding_lang = None
     settings_use_prompt = False
+    settings_record_for_inverstigation = False
+    settings_record_text_to_file = False
     recordingUtil = RecordingUtil()
     current_streamming_time = 0
     FIRST = True
@@ -29,7 +32,8 @@ def init_globals(run_local=True):
     transcribe = ''
     html_transcribe = []
     transcription = ['']
-    transcription_lang = [None]
+    transcription_lang = []
+    l_phrases = []
     languages = []
     #STATIC_URL = static_url
     LIVE_URL = 'http://10.53.140.33:86/gradio_demo_live/'
