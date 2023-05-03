@@ -104,8 +104,9 @@ def change_settings(settings_record_wav, settings_decoding_lang, settings_use_pr
         settings.settings_decoding_lang = ["en"]
 
 
-def gradio_main(static_url, live_url, debug_flag=False):
-    init_globals(static_url, live_url)
+
+def gradio_main(debug_flag=False, run_local=True):
+    init_globals(run_local)
 
     # block = gr.Blocks(css=css)
     block = gr.Blocks(theme=gr.themes.Glass())
@@ -167,8 +168,9 @@ def gradio_main(static_url, live_url, debug_flag=False):
                             trans_btn3 = gr.Button("Transcribe", visible=False)
 
                 text = gr.Textbox(show_label=True, elem_id="result-textarea", label = "Detected Language:")
-                text2 = gr.Textbox(show_label=True, elem_id="result-textarea_rtl", label = "Transcription:")
-                #text2 = gr.TextArea(show_label=True, elem_id="result-textarea_rtl", label="Transcription:")
+                textTranscription = gr.Textbox(show_label=True, elem_id="result-textarea_rtl", label = "Transcription:")
+                #textTranscription = gr.TextArea(show_label=True, elem_id="result-textarea_rtl", label="Transcription:")
+                #textTranscription = gr.outputs.HTML()
 
                 plot = gr.Plot(show_label=False, visible=False)
 
@@ -178,12 +180,12 @@ def gradio_main(static_url, live_url, debug_flag=False):
 
                 radio.change(fn=change_audio, inputs=radio, outputs=[audio, trans_btn, audio2, trans_btn3, audio3])
 
-                trans_btn.click(inference_file, audio2, [text, plot, plot, text2, clear_btn, play_btn])
-                trans_btn3.click(inference_file, audio3, [text, plot, plot, text2, clear_btn, play_btn])
-                audio.stream(inference_file, [audio], [text, plot, plot, text2, clear_btn, play_btn])
+                trans_btn.click(inference_file, audio2, [text, plot, plot, textTranscription, clear_btn, play_btn])
+                trans_btn3.click(inference_file, audio3, [text, plot, plot, textTranscription, clear_btn, play_btn])
+                audio.stream(inference_file, [audio], [text, plot, plot, textTranscription, clear_btn, play_btn])
 
                 play_btn.click(play_sound)
-                clear_btn.click(clear, inputs=[], outputs=[text, plot, plot, text2, clear_btn, play_btn])
+                clear_btn.click(clear, inputs=[], outputs=[text, plot, plot, textTranscription, clear_btn, play_btn])
 
                 gr.HTML('''
                 <div class="footer">

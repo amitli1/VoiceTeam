@@ -88,16 +88,10 @@ def transcribe_chunk(audio):
     :param audio:
     :return: str: transcription
     """
-    audio_data = {'wav': [str(i) for i in audio.tolist()]}
-    audio_data['language'] = settings.settings_decoding_lang
-    if settings.RUN_LOCAL:
-        res = get_local_transcription(audio_data['wav'])[0]
-        trnscrb = res.text.strip()
-    else:
-        res = requests.get(settings.LIVE_URL, json=audio_data)
-        res = res.json()[0]
-        trnscrb = res['text'].strip()
-    return trnscrb
+    res = transcribe_chunk_live(audio)
+    text = res['text'].strip()
+    lang = res['language']
+    return text, lang
 
 
 def get_local_transcription(wav_list):
@@ -173,8 +167,9 @@ def inference_file(audio):
             chunk_idx = 0
             while end < wav.shape[0]:
                 # temp_trans, temp_langu =
-                settings.transcribe += transcribe_chunk(chunk)
-                # settings.languages = temp_langu
+                text, lang = transcribe_chunk(chunk)
+                settings.transcribe += text
+                settings.transcription_lang = lang
                 chunk_idx += 1
                 start = chunk_idx * 30 * 16000
                 if start >= wav.shape[0]:
@@ -184,30 +179,47 @@ def inference_file(audio):
                     end = wav.shape[0] - 1
                     chunk = wav[start:end]
         else:
-            settings.transcribe += transcribe_chunk(wav)
+            text, lang = transcribe_chunk(wav)
+            settings.transcribe += text
+            settings.transcription_lang = lang
         print(f"detect langs ={settings.languages}")
         if len(settings.languages) > 0:
             settings.curr_lang = mode(settings.languages)
 
-    #html_text = prepaare_text(settings.transcribe)
+    # settings.html_transcribe = convert_text_to_html(settings.html_transcribe,
+    #                                                 settings.transcribe,
+    #                                                 settings.transcription_lang)
+    # return settings.curr_lang, fig, gr.update(visible=True), settings.html_transcribe, \
+    #        gr.update(visible=True), gr.update(visible=True)
     return settings.curr_lang, fig, gr.update(visible=True), settings.transcribe, \
-           gr.update(visible=True), gr.update(visible=True)
+        gr.update(visible=True), gr.update(visible=True)
 
 
-def prepaare_text(text):
+def convert_text_to_html(full_html, current_text, current_lang):
     '''
         style text results in html format
     '''
-    html_text = ""
-    reg = re.compile(r'[a-zA-Z]')
-    for i in range(len(text)):
-        if reg.match(text[i]):
-            current_line = f"<p style='text-align:right;'> {text[i]} </p>"
-        else:
-            current_line = f"<p style='text-align:left;'> {text[i]} </p>"
-        html_res = html_res + current_line + "\n"
-    return html_text
 
+    if len(current_text) == 0:
+        return full_html
+
+    if len(current_lang) == 0:
+        return full_html
+
+    num_of_elm = len(current_lang)
+    lang       = current_lang[-1]
+    if len(current_text.split("\n")) == 1:
+        text = current_text.split("\n")[0]
+    else:
+        text       = current_text.split("\n")[-2]
+
+    if lang == "en":
+        current_line = f"<p style='text-align:left; color:green; font-size:32px'> {text} </p>" + "\n"
+    else:
+        current_line = f"<p style='text-align:right; color:green; font-size:32px'> {text} </p>" + "\n"
+
+    full_html.append(current_line)
+    return full_html
 
 def clear():
     """
@@ -221,7 +233,9 @@ def clear():
     settings.curr_lang = ''
     settings.audio_vec = torch.tensor([])
     settings.transcribe = ''
+    settings.html_transcribe = []
     settings.transcription = ['']
+    settings.transcription_lang = [None]
     settings.languages = []
     settings.speech_probs = []
     settings.FIRST = True
@@ -326,9 +340,10 @@ def realtime():
                     no_speech_prob = result['no_speech_prob']
                     avg_logprob = result['avg_logprob']
                 settings.languages.append(settings.LANGUAGES[res_lang])
-                
-               
+
+                print(f"Before filter bad results, text: {text}")
                 text = filter_bad_results(text, compression_ratio, no_speech_prob, avg_logprob)
+                print(f"After filter bad results, text: {text}")
                 
                 if text != "":
                     if len(settings.languages) > settings.num_lang_results:
@@ -342,9 +357,11 @@ def realtime():
                     if phrase_complete:
                         print("phrase_complete")
                         settings.transcription.append(text)
+                        settings.transcription_lang.append(res_lang)
                     else:
                         print("replacing the last line with the current text:")
                         settings.transcription[-1] = text
+                        settings.transcription_lang[-1] = res_lang
 
                     #print(f"Full transcription so far:\n{settings.transcription}\n")
                     print(f"Last transcription :\n{text}\n")

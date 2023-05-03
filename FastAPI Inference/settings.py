@@ -12,7 +12,7 @@ def init_globals(run_local=True):
     global audio_vec, transcribe, transcription, languages, curr_lang, vad, vad_iterator, STOP, FIRST, streaming,\
            STATIC_URL, LIVE_URL, speech_probs, LANGUAGES, get_speech_timestamps, collect_chunks, vad_debug, \
            current_streamming_time, recordingUtil, record_4_debug, num_lang_results, compression_ratio_threshold, logprob_threshold, \
-           no_speech_threshold, settings_record_wav, settings_decoding_lang, settings_use_prompt, RUN_LOCAL, audio_model
+           no_speech_threshold, settings_record_wav, settings_decoding_lang, settings_use_prompt, RUN_LOCAL, audio_model, html_transcribe,  transcription_lang
 
 
     settings_record_wav = False
@@ -27,7 +27,9 @@ def init_globals(run_local=True):
     audio_vec = torch.tensor([])
     speech_probs = []
     transcribe = ''
+    html_transcribe = []
     transcription = ['']
+    transcription_lang = [None]
     languages = []
     #STATIC_URL = static_url
     LIVE_URL = 'http://10.53.140.33:86/gradio_demo_live/'
@@ -38,7 +40,7 @@ def init_globals(run_local=True):
     # the thresholds below are used to filter out invalid whisper transcriptions
     compression_ratio_threshold = 2.4
     logprob_threshold = -1.0
-    no_speech_threshold = 0.5
+    no_speech_threshold = 0.6
     RUN_LOCAL = run_local
     if RUN_LOCAL:
         audio_model = whisper.load_model('large', 'cuda')
