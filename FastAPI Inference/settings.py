@@ -38,7 +38,7 @@ def init_globals(run_local=True):
     # the thresholds below are used to filter out invalid whisper transcriptions
     compression_ratio_threshold = 2.4
     logprob_threshold = -1.0
-    no_speech_threshold = 0.5
+    no_speech_threshold = 0.6
     RUN_LOCAL = run_local
     if RUN_LOCAL:
         audio_model = whisper.load_model('large', 'cuda')
