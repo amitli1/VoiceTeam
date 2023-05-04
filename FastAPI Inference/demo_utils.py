@@ -220,9 +220,33 @@ def inference_file(audio):
     #                                                 settings.transcription_lang)
     # return settings.curr_lang, fig, gr.update(visible=True), settings.html_transcribe, \
     #        gr.update(visible=True), gr.update(visible=True)
-    return settings.curr_lang, fig, gr.update(visible=True), settings.transcribe, \
+
+    text_to_show = show_only_last_rows(settings.transcribe)
+    return settings.curr_lang, fig, gr.update(visible=True), text_to_show, \
         gr.update(visible=True), gr.update(visible=True)
 
+
+def show_only_last_rows(l_text, num_of_last_lines=20):
+
+    res = []
+    l_text = l_text.split("\n")
+    if len(l_text) == 0:
+        return ""
+    for val in reversed(l_text):
+        if (val == "\n") or (len(val) == 0) or (val == ""):
+            continue
+        res.append(val)
+        num_of_last_lines = num_of_last_lines - 1
+        if num_of_last_lines == 0:
+            break
+
+    if len(res) == 0:
+        return ""
+    if len(res) == 1:
+        return res
+    res.reverse()
+    res = '\n'.join(res)
+    return res
 
 def convert_text_to_html(full_html, current_text, l_current_lang):
     '''
