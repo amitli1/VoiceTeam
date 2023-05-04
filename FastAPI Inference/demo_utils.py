@@ -222,8 +222,34 @@ def inference_file(audio):
     #        gr.update(visible=True), gr.update(visible=True)
 
     text_to_show = show_only_last_rows(settings.transcribe)
+    #text_to_show = build_html_table(settings.l_phrases, settings.transcription_lang)
+
     return settings.curr_lang, fig, gr.update(visible=True), text_to_show, \
         gr.update(visible=True), gr.update(visible=True)
+
+
+
+def build_html_table(all_text, all_lang):
+
+    if len(all_text) >= 5:
+        del all_text[0]
+        del all_lang[0]
+
+    html_table = []
+    html_table.append("<table border='1'  align='center'>")
+    for i in range(len(all_text)):
+        text = all_text
+        lang = all_lang
+        if lang == "he":
+            html_table.append(f"<tr align='right'>")
+        else:
+            html_table.append(f"<tr align='left'>")
+        html_table.append(f"<td> {text}</td>")
+        html_table.append("</tr>")
+    html_table.append("</table>")
+
+    html_table = ''.join(html_table)
+    return html_table
 
 
 def show_only_last_rows(l_text, num_of_last_lines=20):
