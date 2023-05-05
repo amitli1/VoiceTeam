@@ -107,6 +107,9 @@ def change_settings(settings_record_wav, settings_decoding_lang, settings_use_pr
     elif settings_decoding_lang == "English":
         settings.settings_decoding_lang = ["en"]
 
+def update_text_whisper_display_results():
+    text_to_show = build_html_table(settings.l_phrases, settings.transcription_lang)
+    return text_to_show
 
 
 def gradio_main(debug_flag=False, run_local=True):
@@ -233,6 +236,7 @@ def gradio_main(debug_flag=False, run_local=True):
         with gr.Tab("Version"):
             gr.Label("Version 1.0")
 
+        #block.load(update_text_whisper_display_results, None, [textTranscription], every=1)
 
     block.queue().launch(debug=debug_flag, )
 #for debugging on vitaly's computer
