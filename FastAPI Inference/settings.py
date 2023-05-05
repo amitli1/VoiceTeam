@@ -1,6 +1,10 @@
 import torch
 import whisper
+import os
 from recording_util import RecordingUtil
+
+
+RUN_FROM_LOCAL = False
 
 def init_globals(run_local=True):
     """
@@ -48,13 +52,27 @@ def init_globals(run_local=True):
     if RUN_LOCAL:
         audio_model = whisper.load_model('large', 'cuda')
 
-    vad, vad_utils = torch.hub.load(repo_or_dir='snakers4/silero-vad',
+    if RUN_FROM_LOCAL is True:
+        loacl_cashe = "/home/amitli/.cache/torch/hub/snakers4_silero-vad_master"
+        print(loacl_cashe)
+        loacl_cashe = f"{os.path.expanduser('~')}/.cache/torch/hub/snakers4_silero-vad_master"
+        print(loacl_cashe)
+        vad_path = loacl_cashe
+        source = "local"
+    else:
+        internet_path = "snakers4/silero-vad"
+        vad_path = internet_path
+        source = "github"
+
+    vad, vad_utils = torch.hub.load(repo_or_dir=vad_path,
                                     model='silero_vad',
+                                    source = source,
                                     force_reload=False,
                                     onnx=False)
 
-    vad_debug, vad_utils = torch.hub.load(repo_or_dir='snakers4/silero-vad',
+    vad_debug, vad_utils = torch.hub.load(repo_or_dir=vad_path,
                                     model='silero_vad',
+                                    source = source,
                                     force_reload=False,
                                     onnx=False)
 
