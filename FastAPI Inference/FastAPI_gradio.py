@@ -108,6 +108,7 @@ def change_settings(settings_record_wav, settings_decoding_lang, settings_use_pr
         settings.settings_decoding_lang = ["en"]
 
 def update_text_whisper_display_results():
+
     text_to_show = build_html_table(settings.l_phrases, settings.transcription_lang)
     return text_to_show
 
@@ -190,6 +191,9 @@ def gradio_main(debug_flag=False, run_local=True):
                 trans_btn.click(inference_file, audio2, [text, plot, plot, textTranscription, clear_btn, play_btn])
                 trans_btn3.click(inference_file, audio3, [text, plot, plot, textTranscription, clear_btn, play_btn])
                 audio.stream(inference_file, [audio], [text, plot, plot, textTranscription, clear_btn, play_btn])
+                # trans_btn.click(inference_file, audio2, [text, plot, plot,  clear_btn, play_btn])
+                # trans_btn3.click(inference_file, audio3, [text, plot, plot,  clear_btn, play_btn])
+                # audio.stream(inference_file, [audio], [text, plot, plot,  clear_btn, play_btn])
 
                 play_btn.click(play_sound)
                 clear_btn.click(clear, inputs=[], outputs=[text, plot, plot, textTranscription, clear_btn, play_btn])

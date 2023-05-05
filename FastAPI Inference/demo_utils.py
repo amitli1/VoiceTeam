@@ -67,6 +67,24 @@ def transcribe_chunk_live(audio):
     :return: str: transcription
     """
 
+    # import random
+    # res = {}
+    # r = random.uniform(0, 1)
+    # if r < 0.5:
+    #     res["text"] = "it's now or never"
+    #     res["language"] = "en"
+    #     res["compression_ratio"] = 0
+    #     res["no_speech_prob"] = 0
+    #     res["avg_logprob"] = 0
+    # else:
+    #     res["text"] = "נכון מאוד הוא צודק במה שהוא אומר"
+    #     res["language"] = "he"
+    #     res["compression_ratio"] = 0
+    #     res["no_speech_prob"] = 0
+    #     res["avg_logprob"] = 0
+    # return res
+
+
     try:
         # settings.recordingUtil.record_wav(audio)
         num_of_samples_before_vad = len(audio)
@@ -226,6 +244,8 @@ def inference_file(audio):
 
     return settings.curr_lang, fig, gr.update(visible=True), text_to_show, \
         gr.update(visible=True), gr.update(visible=True)
+    # return settings.curr_lang, fig, gr.update(visible=True),  \
+    #     gr.update(visible=True), gr.update(visible=True)
 
 
 
@@ -238,8 +258,8 @@ def build_html_table(all_text, all_lang):
     html_table = []
     html_table.append("<table border='1'  align='center'>")
     for i in range(len(all_text)):
-        text = all_text
-        lang = all_lang
+        text = all_text[i]
+        lang = all_lang[i]
         if lang == "he":
             html_table.append(f"<tr align='right'>")
         else:
