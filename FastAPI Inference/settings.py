@@ -5,6 +5,7 @@ from recording_util import RecordingUtil
 
 
 RUN_FROM_LOCAL = False
+RUN_LOCAL_VAD  = False
 
 def init_globals(run_local=True):
     """
@@ -52,12 +53,13 @@ def init_globals(run_local=True):
     if RUN_LOCAL:
         audio_model = whisper.load_model('large', 'cuda')
 
-    if RUN_FROM_LOCAL is True:
+    if RUN_LOCAL_VAD is True:
         loacl_cashe = f"{os.path.expanduser('~')}/.cache/torch/hub/snakers4_silero-vad_master"
-        print(loacl_cashe)
+        print(f"Run silero-vad from loacl_cashe")
         vad_path = loacl_cashe
         source = "local"
     else:
+        print(f"Run silero-vad from internet (torch hub)")
         internet_path = "snakers4/silero-vad"
         vad_path = internet_path
         source = "github"
