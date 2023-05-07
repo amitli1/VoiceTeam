@@ -497,10 +497,12 @@ def realtime():
                 if settings.settings_use_prompt:
                     if phrase_complete:
                         # if the previous phrase is complete then send it as prompt
-                        prompt = settings.transcription[-1]
+                        if len(settings.transcription) > 0:
+                            prompt = settings.transcription[-1]
                     else:
                         # otherwise, the last phrase is the ongoing phrase so send the one before
-                        prompt = settings.transcription[-2]
+                        if len(settings.transcription) > 1:
+                            prompt = settings.transcription[-2]
 
                 # call whisper
                 result = transcribe_chunk_live(wav, prompt)
