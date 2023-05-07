@@ -88,6 +88,8 @@ def transcribe_chunk_live(audio, prompt = None):
             res = get_local_transcription(audio_data['wav'], prompt)[0]
         else:
             print("Send request to rambo")
+            if audio_data['prompt'] == ['']:
+                audio_data['prompt'] = ['None']
             res = requests.get(settings.LIVE_URL, json=audio_data)
             print("got response from rambo")
             res = res.json()[0]
@@ -238,18 +240,9 @@ def inference_file(audio):
         if len(settings.languages) > 0:
             settings.curr_lang = mode(settings.languages)
 
-    # settings.html_transcribe = convert_text_to_html(settings.html_transcribe,
-    #                                                 settings.l_phrases,
-    #                                                 settings.transcription_lang)
-    # return settings.curr_lang, fig, gr.update(visible=True), settings.html_transcribe, \
-    #        gr.update(visible=True), gr.update(visible=True)
 
     #text_to_show = show_only_last_rows(settings.transcribe)
-    #text_to_show = build_html_table(settings.l_phrases, settings.transcription_lang)
-
-    # return settings.curr_lang, fig, gr.update(visible=True), text_to_show, \
-    #     gr.update(visible=True), gr.update(visible=True)
-    print(f"---> Total number of whisper results: {len(settings.l_phrases)}")
+    print(f"---> Total number of whisper results: {len(settings.l_phrases)}, Values: {settings.l_phrases}")
     return settings.curr_lang, fig, gr.update(visible=True),  \
         gr.update(visible=True), gr.update(visible=True)
 
@@ -532,15 +525,18 @@ def realtime():
                     # Otherwise, edit the existing one.
                     if phrase_complete:
                         print("phrase_complete")
-                        settings.transcription.append(text)
-                        settings.transcription_lang.append(res_lang)
-                        settings.l_phrases.append(text)
+                        if (text == "") or (len(text) == 0):
+                            print("---> [WARN] Got Empty text results")
+                        else:
+                            settings.transcription.append(text)
+                            settings.transcription_lang.append(res_lang)
+                            settings.l_phrases.append(text)
                     else:
                         print("replacing the last line with the current text:")
                         settings.transcription[-1] = text
 
                     # print(f"Full transcription so far:\n{settings.transcription}\n")
-                    print(f"Last transcription :\n{text}\n")
+                    #print(f"Last transcription :\n{text}\n")
 
                     if text != '':
                         settings.transcribe = ''

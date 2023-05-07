@@ -182,8 +182,6 @@ def gradio_main(debug_flag=False, run_local=True):
                             trans_btn3 = gr.Button("Transcribe", visible=False)
 
                 text = gr.Textbox(show_label=True, elem_id="result-textarea", label = "Detected Language:")
-                #textTranscription = gr.Textbox(show_label=True, elem_id="result-textarea_rtl", label = "Transcription:")
-                #textTranscription = gr.TextArea(show_label=True, elem_id="result-textarea_rtl", label="Transcription:")
                 textTranscription = gr.outputs.HTML()
 
                 plot = gr.Plot(show_label=False, visible=False)
@@ -194,9 +192,6 @@ def gradio_main(debug_flag=False, run_local=True):
 
                 radio.change(fn=change_audio, inputs=radio, outputs=[audio, trans_btn, audio2, trans_btn3, audio3])
 
-                # trans_btn.click(inference_file, audio2, [text, plot, plot, textTranscription, clear_btn, play_btn])
-                # trans_btn3.click(inference_file, audio3, [text, plot, plot, textTranscription, clear_btn, play_btn])
-                # audio.stream(inference_file, [audio], [text, plot, plot, textTranscription, clear_btn, play_btn])
                 trans_btn.click(inference_file, audio2, [text, plot, plot,  clear_btn, play_btn])
                 trans_btn3.click(inference_file, audio3, [text, plot, plot,  clear_btn, play_btn])
                 audio.stream(inference_file, [audio], [text, plot, plot,  clear_btn, play_btn])
@@ -210,13 +205,7 @@ def gradio_main(debug_flag=False, run_local=True):
                             </p>
                 </div>
                 ''')
-                # gr.HTML('''
 
-                #    <img style="text-align: center; max-width: 650px; margin: 0 auto;"
-                #     src="https://geekflare.com/wp-content/uploads/2022/02/speechrecognitionapi.png",
-                #     width="500" height="600">
-
-                # ''')
         with gr.Tab("Settings"):
             settings_record_wav    = gr.Checkbox(label="Record WAV", info="Record WAV files for debug")
             settings_decoding_lang = gr.Dropdown(["None", "Hebrew", "English"], label="DecodingLanguage", info="Run Whisper with language decoding")
