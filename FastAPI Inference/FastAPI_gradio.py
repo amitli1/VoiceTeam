@@ -248,15 +248,15 @@ def gradio_main(debug_flag=False, run_local=True):
 
         block.load(update_text_whisper_display_results, None, [textTranscription], every=1)
 
-    #block.queue().launch(debug=debug_flag, )
+    block.queue().launch(debug=debug_flag, )
 #for debugging on vitaly's computer
-    block.queue().launch(share=False,
-                        debug=debug_flag,
-                        server_name="0.0.0.0",
-                        server_port=8432,
-                        ssl_verify=False,
-                        ssl_certfile="cert.pem",
-                        ssl_keyfile="key.pem")
+    # block.queue().launch(share=False,
+    #                     debug=debug_flag,
+    #                     server_name="0.0.0.0",
+    #                     server_port=8432,
+    #                     ssl_verify=False,
+    #                     ssl_certfile="cert.pem",
+    #                     ssl_keyfile="key.pem")
 
 # if __name__ == '__main__':
 #     main()
