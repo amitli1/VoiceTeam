@@ -131,16 +131,27 @@ def get_local_transcription(audio_data):
     prompt    = audio_data["prompt"]
     languages = audio_data["languages"]
 
-    if prompt == [''] or prompt == ['None'] or prompt is None:
+    # if prompt == [''] or prompt == ['None'] or prompt is None:
+    #     prompt = ''
+    if prompt is None:
         prompt = ''
+    if type(prompt) == list:
+        if len(prompt) > 0:
+            prompt = prompt[0]
     if (languages == ['']) or (languages == ['None']) or (languages is None) or (languages == [None]):
         languages = []
 
     wav     = [np.float(i) for i in wav_list]
     audio   = whisper.pad_or_trim(np.array(wav)).astype('float32')
     mel     = whisper.log_mel_spectrogram(audio).to('cuda')
-    options = whisper.DecodingOptions(fp16=True, task='transcribe', beam_size=5, prompt = prompt, language=languages)
-    result  = whisper.decode(settings.audio_model, mel, options)
+    try:
+        options = whisper.DecodingOptions(fp16=True, task='transcribe', beam_size=5, prompt = prompt, language=languages)
+        result  = whisper.decode(settings.audio_model, mel, options)
+    except Exception as e:
+        print(f"Got exception: {e}")
+        print(f"languages = {languages}")
+        print(f"prompt = {prompt}")
+        print("\n")
     return [result]
 
 def inference_file(audio):
