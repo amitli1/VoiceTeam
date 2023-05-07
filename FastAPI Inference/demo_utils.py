@@ -80,12 +80,12 @@ def transcribe_chunk_live(audio, prompt = None):
         start = time.time()
 
         if prompt is None:
-            prompt = [""]
+            prompt = ['None']
         else:
             prompt = [prompt]
         audio_data = {'wav': [str(i) for i in audio.tolist()], 'languages': settings.settings_decoding_lang, 'prompt':prompt}
         if settings.RUN_LOCAL:
-            res = get_local_transcription(audio_data['wav'], prompt)[0]
+            res = get_local_transcription(audio_data)[0]
         else:
             print("Send request to rambo")
             if audio_data['prompt'] == ['']:
@@ -126,15 +126,21 @@ def transcribe_chunk(audio):
 
 
 
-def get_local_transcription(audio, prompt):
-    print(f"get_local_transcription: the prompt is {prompt}")
-    wav_list = audio["wav"]
-    prompt = audio["prompt"]
-    wav = [np.float(i) for i in wav_list]
-    audio = whisper.pad_or_trim(np.array(wav)).astype('float32')
-    mel = whisper.log_mel_spectrogram(audio).to('cuda')
-    options = whisper.DecodingOptions(fp16=True, task='transcribe', beam_size=5, prompt = prompt)
-    result = whisper.decode(settings.audio_model, mel, options)
+def get_local_transcription(audio_data):
+    wav_list  = audio_data["wav"]
+    prompt    = audio_data["prompt"]
+    languages = audio_data["languages"]
+
+    if prompt == [''] or prompt == ['None'] or prompt is None:
+        prompt = ''
+    if (languages == ['']) or (languages == ['None']) or (languages is None) or (languages == [None]):
+        languages = []
+
+    wav     = [np.float(i) for i in wav_list]
+    audio   = whisper.pad_or_trim(np.array(wav)).astype('float32')
+    mel     = whisper.log_mel_spectrogram(audio).to('cuda')
+    options = whisper.DecodingOptions(fp16=True, task='transcribe', beam_size=5, prompt = prompt, language=languages)
+    result  = whisper.decode(settings.audio_model, mel, options)
     return [result]
 
 def inference_file(audio):
