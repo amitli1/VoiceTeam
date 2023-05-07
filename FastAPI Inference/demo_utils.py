@@ -59,31 +59,13 @@ def is_json(myjson):
     return False
   return True
 
-def transcribe_chunk_live(audio):
+def transcribe_chunk_live(audio, prompt = None):
     """
     This functions transcribe given audio chunk. It also determines the language of the chunk and append it to the
     global languages list. It sends the audio to the server.
     :param audio:
     :return: str: transcription
     """
-
-    # import random
-    # res = {}
-    # r = random.uniform(0, 1)
-    # if r < 0.5:
-    #     res["text"] = "it's now or never"
-    #     res["language"] = "en"
-    #     res["compression_ratio"] = 0
-    #     res["no_speech_prob"] = 0
-    #     res["avg_logprob"] = 0
-    # else:
-    #     res["text"] = "נכון מאוד הוא צודק במה שהוא אומר"
-    #     res["language"] = "he"
-    #     res["compression_ratio"] = 0
-    #     res["no_speech_prob"] = 0
-    #     res["avg_logprob"] = 0
-    # return res
-
 
     try:
         # settings.recordingUtil.record_wav(audio)
@@ -97,9 +79,13 @@ def transcribe_chunk_live(audio):
         print(f"[transcribe_chunk_live]: VAD2 took {end - start} seconds\n\tBefore VAD: {round(num_of_samples_before_vad/16000, 2)} seconds\n\tAfter VAD: {round(num_of_samples_after_vad/16000, 2)} seconds")
         start = time.time()
 
-        audio_data = {'wav': [str(i) for i in audio.tolist()], 'languages': settings.settings_decoding_lang}
+        if prompt is None:
+            prompt = [""]
+        else:
+            prompt = [prompt]
+        audio_data = {'wav': [str(i) for i in audio.tolist()], 'languages': settings.settings_decoding_lang, 'prompt':prompt}
         if settings.RUN_LOCAL:
-            res = get_local_transcription(audio_data['wav'])[0]
+            res = get_local_transcription(audio_data['wav'], prompt)[0]
         else:
             print("Send request to rambo")
             res = requests.get(settings.LIVE_URL, json=audio_data)
@@ -137,14 +123,17 @@ def transcribe_chunk(audio):
     return text, lang
 
 
-def get_local_transcription(wav_list):
-        wav = [np.float(i) for i in wav_list]
-        audio = whisper.pad_or_trim(np.array(wav)).astype('float32')
-        mel = whisper.log_mel_spectrogram(audio).to('cuda')
-        options = whisper.DecodingOptions(fp16=False, task='transcribe', beam_size=5)
-        result = whisper.decode(settings.audio_model, mel, options)
-        return [result]
 
+def get_local_transcription(audio, prompt):
+    print(f"get_local_transcription: the prompt is {prompt}")
+    wav_list = audio["wav"]
+    prompt = audio["prompt"]
+    wav = [np.float(i) for i in wav_list]
+    audio = whisper.pad_or_trim(np.array(wav)).astype('float32')
+    mel = whisper.log_mel_spectrogram(audio).to('cuda')
+    options = whisper.DecodingOptions(fp16=True, task='transcribe', beam_size=5, prompt = prompt)
+    result = whisper.decode(settings.audio_model, mel, options)
+    return [result]
 
 def inference_file(audio):
     """
@@ -152,7 +141,6 @@ def inference_file(audio):
     :param audio:
     :return: current language, vad fig, gr.update(visible=True), transcribe, gr.update(visible=True), gr.update(visible=True)
     """
-
 
     # time.sleep(0.2)
     # amitli: when streaming is stopped -> we will clear the MIC thread queue
@@ -206,7 +194,7 @@ def inference_file(audio):
     fig.update_layout(showlegend=False)
     # delete if not needed
     wav = settings.audio_vec
-
+    phrases = []
     if not settings.streaming:
         if wav.shape[0] > 16000 * 30:
             start = 0
@@ -214,10 +202,14 @@ def inference_file(audio):
             chunk = wav[start:end]
             chunk_idx = 0
             while end < wav.shape[0]:
+                prompt = None
+                if settings.settings_use_prompt and len(phrases) > 0:
+                    prompt = phrases[-1]
                 # temp_trans, temp_langu =
-                text, lang = transcribe_chunk(chunk)
+                text, lang = transcribe_chunk(chunk, prompt)
                 settings.transcribe += text
                 settings.transcription_lang = lang
+                phrases.append(text)
                 chunk_idx += 1
                 start = chunk_idx * 30 * 16000
                 if start >= wav.shape[0]:
@@ -237,9 +229,9 @@ def inference_file(audio):
                     text = "בדיקה קבועה מראש"
                     lang = "he"
                 else:
-                    text, lang = transcribe_chunk(wav)
+                    text, lang = transcribe_chunk(wav, prompt = None)
             else:
-                text, lang = transcribe_chunk(wav)
+                text, lang = transcribe_chunk(wav, prompt = None)
             settings.transcribe += text
             settings.transcription_lang = lang
         print(f"detect langs ={settings.languages}")
@@ -252,14 +244,14 @@ def inference_file(audio):
     # return settings.curr_lang, fig, gr.update(visible=True), settings.html_transcribe, \
     #        gr.update(visible=True), gr.update(visible=True)
 
-    text_to_show = show_only_last_rows(settings.transcribe)
+    #text_to_show = show_only_last_rows(settings.transcribe)
     #text_to_show = build_html_table(settings.l_phrases, settings.transcription_lang)
 
     # return settings.curr_lang, fig, gr.update(visible=True), text_to_show, \
     #     gr.update(visible=True), gr.update(visible=True)
+    print(f"---> Total number of whisper results: {len(settings.l_phrases)}")
     return settings.curr_lang, fig, gr.update(visible=True),  \
         gr.update(visible=True), gr.update(visible=True)
-
 
 def build_html_res(l_text, l_lang):
     all_text = []
@@ -419,15 +411,15 @@ def realtime():
 
     # We use SpeechRecognizer to record our audio because it has a nice feature where it can detect when speech ends.
     recorder = sr.Recognizer()
-    recorder.energy_threshold = 100 # minimum audio energy to consider for recording
+    recorder.energy_threshold = 100  # minimum audio energy to consider for recording
     # Definitely do this, dynamic energy compensation lowers the energy threshold dramatically to a point where the SpeechRecognizer never stops recording.
     recorder.dynamic_energy_threshold = False
 
     source = sr.Microphone(sample_rate=16000)
     with source:
-        recorder.adjust_for_ambient_noise(source) # we only need to calibrate once, before we start listening
+        recorder.adjust_for_ambient_noise(source)  # we only need to calibrate once, before we start listening
 
-    def record_callback(_, audio:sr.AudioData) -> None:
+    def record_callback(_, audio: sr.AudioData) -> None:
         """
         Threaded callback function to receive audio data when recordings finish.
         audio: An AudioData containing the recorded bytes.
@@ -490,8 +482,18 @@ def realtime():
                 audio_array, _ = sf.read(wav_stream)
                 audio_array = audio_array.astype(np.float32)
                 wav = torch.from_numpy(audio_array)
+
+                prompt = None
+                if settings.settings_use_prompt:
+                    if phrase_complete:
+                        # if the previous phrase is complete then send it as prompt
+                        prompt = settings.transcription[-1]
+                    else:
+                        # otherwise, the last phrase is the ongoing phrase so send the one before
+                        prompt = settings.transcription[-2]
+
                 # call whisper
-                result = transcribe_chunk_live(wav)
+                result = transcribe_chunk_live(wav, prompt)
                 if result == None:
                     text = ""
                     res_lang = ""
@@ -514,10 +516,9 @@ def realtime():
                         settings.recordingUtil.record_wav(wav, no_speech_prob)
                     if len(res_lang) > 0:
                         settings.languages.append(settings.LANGUAGES[res_lang])
-                    
-                
+
                     text = filter_bad_results(text, compression_ratio, no_speech_prob, avg_logprob)
-                    
+
                     if text != "":
                         if len(settings.languages) > settings.num_lang_results:
                             settings.languages.pop(0)
@@ -525,6 +526,8 @@ def realtime():
                     if len(settings.languages) == settings.num_lang_results:
                         settings.curr_lang = mode(settings.languages)
 
+                    # remove all non-text characters, including emojis, but preserve punctuation marks
+                    text = re.sub(r'[^\w\s\.,!?\']', '', text)
                     # If we detected a pause between recordings, add a new item to our transcripion.
                     # Otherwise, edit the existing one.
                     if phrase_complete:
@@ -536,14 +539,13 @@ def realtime():
                         print("replacing the last line with the current text:")
                         settings.transcription[-1] = text
 
-                    #print(f"Full transcription so far:\n{settings.transcription}\n")
+                    # print(f"Full transcription so far:\n{settings.transcription}\n")
                     print(f"Last transcription :\n{text}\n")
 
                     if text != '':
                         settings.transcribe = ''
                         for line in settings.transcription:
                             settings.transcribe += line + '\n'
-
 
                 # Infinite loops are bad for processors, must sleep.
                 time.sleep(0.05)
