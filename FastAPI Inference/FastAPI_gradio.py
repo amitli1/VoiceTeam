@@ -118,7 +118,7 @@ def gradio_main(debug_flag=False, run_local=True):
 
     # block = gr.Blocks(css=css)
     tiny_css = """
-    #text_box textarea {
+    #result-textarea_rtl textarea {
       text-align: right;
     }
     """
