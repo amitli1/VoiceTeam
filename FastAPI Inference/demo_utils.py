@@ -153,6 +153,7 @@ def inference_file(audio):
     :return: current language, vad fig, gr.update(visible=True), transcribe, gr.update(visible=True), gr.update(visible=True)
     """
 
+
     # time.sleep(0.2)
     # amitli: when streaming is stopped -> we will clear the MIC thread queue
     if settings.current_streamming_time == 0:
@@ -226,7 +227,19 @@ def inference_file(audio):
                     end = wav.shape[0] - 1
                     chunk = wav[start:end]
         else:
-            text, lang = transcribe_chunk(wav)
+
+            if True:
+                # --- get file name (without path and without gradio tmp file extenstions)
+                fileName = audio.split("/")[-1][0:-10]
+
+                # --- if we want to get hard coded text
+                if fileName == "last_whisper":
+                    text = "בדיקה קבועה מראש"
+                    lang = "he"
+                else:
+                    text, lang = transcribe_chunk(wav)
+            else:
+                text, lang = transcribe_chunk(wav)
             settings.transcribe += text
             settings.transcription_lang = lang
         print(f"detect langs ={settings.languages}")
