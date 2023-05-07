@@ -117,7 +117,12 @@ def gradio_main(debug_flag=False, run_local=True):
     init_globals(run_local)
 
     # block = gr.Blocks(css=css)
-    block = gr.Blocks(theme=gr.themes.Glass())
+    tiny_css = """
+    #text_box textarea {
+      text-align: right;
+    }
+    """
+    block = gr.Blocks(theme=gr.themes.Glass(), css=tiny_css)
 
     with block:
         with gr.Tab("Main"):

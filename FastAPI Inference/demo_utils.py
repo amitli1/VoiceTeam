@@ -249,14 +249,32 @@ def inference_file(audio):
 
 
 
-def build_html_table(all_text, all_lang):
+def build_html_table(l_text, l_lang):
+    all_text = []
+    all_lang = []
 
-    if len(all_text) >= 5:
+    #
+    #   copy just not empty text
+    #
+    for i in range(len(l_text)):
+        if len(l_text[i]) == 0 or l_text[i] == "":
+            continue
+        all_text.append(l_text[i])
+        all_lang.append(l_lang[i])
+
+    #
+    #   save only 20
+    #
+    if len(all_text) >= 20:
         del all_text[0]
         del all_lang[0]
 
+    #
+    #   create table
+    #
     html_table = []
-    html_table.append("<table border='1'  align='center'>")
+    #html_table.append("<table border='1'  align='center' style='width:100%;color:blue;font-size: 24px;'>")
+    html_table.append("<table border='1' align='center' style='width:100%'>")
     for i in range(len(all_text)):
         text = all_text[i]
         lang = all_lang[i]
@@ -269,6 +287,7 @@ def build_html_table(all_text, all_lang):
     html_table.append("</table>")
 
     html_table = ''.join(html_table)
+    #print(html_table)
     return html_table
 
 
@@ -498,25 +517,21 @@ def realtime():
 
 def filter_bad_results(text, compression_ratio, no_speech_prob, avg_logprob):
     bad_expressions = \
-    ['thanks for watching', 
-    'thank you for watching', 
+    ['thanks for watching',
+    'thank you for watching',
     'Share this video with your friends on social media'.lower(),
     'MBC 뉴스 이덕영입니다'.lower()]
 
     should_skip = False
 
-    print(f"compression_ratio: {compression_ratio}")
-    print(f"no_speech_prob: {no_speech_prob}")
-    print(f"avg_logprob: {avg_logprob}")
-
     if compression_ratio > settings.compression_ratio_threshold:
-        print("\ttranscription aborted due to compression_ratio")
+        print(f"\t-->transcription aborted due to compression_ratio ({compression_ratio} > {settings.compression_ratio_threshold} )")
         should_skip = True
     if avg_logprob < settings.logprob_threshold:
-        print("\ttranscription aborted due to avg_logprob")
+        print(f"\t-->transcription aborted due to avg_logprob: {avg_logprob} < {settings.logprob_threshold}")
         should_skip = True
     if no_speech_prob > settings.no_speech_threshold:
-        print("\ttranscription aborted due to no_speech_prob")
+        print(f"\t-->transcription aborted due to no_speech_prob: {no_speech_prob} > {settings.no_speech_threshold}")
         should_skip = True
     low_text = text.lower()
 
