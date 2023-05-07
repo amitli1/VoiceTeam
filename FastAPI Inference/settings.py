@@ -53,8 +53,6 @@ def init_globals(run_local=True):
         audio_model = whisper.load_model('large', 'cuda')
 
     if RUN_FROM_LOCAL is True:
-        loacl_cashe = "/home/amitli/.cache/torch/hub/snakers4_silero-vad_master"
-        print(loacl_cashe)
         loacl_cashe = f"{os.path.expanduser('~')}/.cache/torch/hub/snakers4_silero-vad_master"
         print(loacl_cashe)
         vad_path = loacl_cashe

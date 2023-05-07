@@ -255,11 +255,46 @@ def inference_file(audio):
     text_to_show = show_only_last_rows(settings.transcribe)
     #text_to_show = build_html_table(settings.l_phrases, settings.transcription_lang)
 
-    return settings.curr_lang, fig, gr.update(visible=True), text_to_show, \
-        gr.update(visible=True), gr.update(visible=True)
-    # return settings.curr_lang, fig, gr.update(visible=True),  \
+    # return settings.curr_lang, fig, gr.update(visible=True), text_to_show, \
     #     gr.update(visible=True), gr.update(visible=True)
+    return settings.curr_lang, fig, gr.update(visible=True),  \
+        gr.update(visible=True), gr.update(visible=True)
 
+
+def build_html_res(l_text, l_lang):
+    all_text = []
+    all_lang = []
+
+    #
+    #   copy just not empty text
+    #
+    for i in range(len(l_text)):
+        if len(l_text[i]) == 0 or l_text[i] == "":
+            continue
+        all_text.append(l_text[i])
+        all_lang.append(l_lang[i])
+
+    #
+    #   save only 20
+    #
+    if len(all_text) >= 20:
+        del all_text[0]
+        del all_lang[0]
+
+    #
+    #   create results
+    #
+    html_res = []
+    for i in range(len(all_text)):
+        text = all_text[i]
+        lang = all_lang[i]
+        if lang == "he":
+            html_res.append(f"<p align='right'> {text} </p>")
+        else:
+            html_res.append(f"<p> {text} </p>")
+
+    html_table = ''.join(html_res)
+    return html_table
 
 
 def build_html_table(l_text, l_lang):

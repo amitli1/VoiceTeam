@@ -109,7 +109,8 @@ def change_settings(settings_record_wav, settings_decoding_lang, settings_use_pr
 
 def update_text_whisper_display_results():
 
-    text_to_show = build_html_table(settings.l_phrases, settings.transcription_lang)
+    #text_to_show = build_html_table(settings.l_phrases, settings.transcription_lang)
+    text_to_show = build_html_res(settings.l_phrases, settings.transcription_lang)
     return text_to_show
 
 
@@ -181,9 +182,9 @@ def gradio_main(debug_flag=False, run_local=True):
                             trans_btn3 = gr.Button("Transcribe", visible=False)
 
                 text = gr.Textbox(show_label=True, elem_id="result-textarea", label = "Detected Language:")
-                textTranscription = gr.Textbox(show_label=True, elem_id="result-textarea_rtl", label = "Transcription:")
+                #textTranscription = gr.Textbox(show_label=True, elem_id="result-textarea_rtl", label = "Transcription:")
                 #textTranscription = gr.TextArea(show_label=True, elem_id="result-textarea_rtl", label="Transcription:")
-                #textTranscription = gr.outputs.HTML()
+                textTranscription = gr.outputs.HTML()
 
                 plot = gr.Plot(show_label=False, visible=False)
 
@@ -193,12 +194,12 @@ def gradio_main(debug_flag=False, run_local=True):
 
                 radio.change(fn=change_audio, inputs=radio, outputs=[audio, trans_btn, audio2, trans_btn3, audio3])
 
-                trans_btn.click(inference_file, audio2, [text, plot, plot, textTranscription, clear_btn, play_btn])
-                trans_btn3.click(inference_file, audio3, [text, plot, plot, textTranscription, clear_btn, play_btn])
-                audio.stream(inference_file, [audio], [text, plot, plot, textTranscription, clear_btn, play_btn])
-                # trans_btn.click(inference_file, audio2, [text, plot, plot,  clear_btn, play_btn])
-                # trans_btn3.click(inference_file, audio3, [text, plot, plot,  clear_btn, play_btn])
-                # audio.stream(inference_file, [audio], [text, plot, plot,  clear_btn, play_btn])
+                # trans_btn.click(inference_file, audio2, [text, plot, plot, textTranscription, clear_btn, play_btn])
+                # trans_btn3.click(inference_file, audio3, [text, plot, plot, textTranscription, clear_btn, play_btn])
+                # audio.stream(inference_file, [audio], [text, plot, plot, textTranscription, clear_btn, play_btn])
+                trans_btn.click(inference_file, audio2, [text, plot, plot,  clear_btn, play_btn])
+                trans_btn3.click(inference_file, audio3, [text, plot, plot,  clear_btn, play_btn])
+                audio.stream(inference_file, [audio], [text, plot, plot,  clear_btn, play_btn])
 
                 play_btn.click(play_sound)
                 clear_btn.click(clear, inputs=[], outputs=[text, plot, plot, textTranscription, clear_btn, play_btn])
@@ -245,7 +246,7 @@ def gradio_main(debug_flag=False, run_local=True):
         with gr.Tab("Version"):
             gr.Label("Version 1.0")
 
-        #block.load(update_text_whisper_display_results, None, [textTranscription], every=1)
+        block.load(update_text_whisper_display_results, None, [textTranscription], every=1)
 
     block.queue().launch(debug=debug_flag, )
 #for debugging on vitaly's computer
