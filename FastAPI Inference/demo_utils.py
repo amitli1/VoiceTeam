@@ -119,14 +119,14 @@ def transcribe_chunk_live(audio, prompt = None):
     return res
 
 
-def transcribe_chunk(audio):
+def transcribe_chunk(audio, prompt):
     """
     This functions transcribe given audio chunk. It also determines the language of the chunk and append it to the
     global languages list.
     :param audio:
     :return: str: transcription
     """
-    res = transcribe_chunk_live(audio)
+    res = transcribe_chunk_live(audio, prompt)
     if res is None:
         return "", ""
     text = res['text'].strip()
@@ -260,11 +260,16 @@ def inference_file(audio):
                     text, lang = transcribe_chunk(wav, prompt = None)
             else:
                 text, lang = transcribe_chunk(wav, prompt = None)
+
             settings.transcribe += text
             settings.transcription_lang = lang
+
         print(f"detect langs ={settings.languages}")
         if len(settings.languages) > 0:
             settings.curr_lang = mode(settings.languages)
+
+        # add results
+        settings.transcription.append(text)
 
 
     #text_to_show = show_only_last_rows(settings.transcribe)
