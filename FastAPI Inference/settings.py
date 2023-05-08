@@ -44,7 +44,7 @@ def init_globals(run_local=True):
     LIVE_URL = 'http://10.53.140.33:86/gradio_demo_live/'
     # the number of detected languages results we need to decide the language. If we have less results, we do not decide the language.
     # when we have enough, we keep the last num_lang_results and report it's mean
-    num_lang_results = 5
+    num_lang_results = 3
     # the thresholds below are used to filter out invalid whisper transcriptions
     compression_ratio_threshold = 2.4
     logprob_threshold = -1.0

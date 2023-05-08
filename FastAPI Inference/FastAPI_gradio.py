@@ -111,7 +111,8 @@ def change_settings(settings_record_wav, settings_decoding_lang, settings_use_pr
 def show_html_last_results(l_transcription):
 
     all_text = []
-
+    if type(l_transcription) != list:
+        l_transcription = [l_transcription]
     #
     #   copy just not empty text
     #

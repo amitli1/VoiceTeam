@@ -142,7 +142,7 @@ def transcribe_chunk(audio, prompt):
 def get_local_transcription(audio_data):
     wav_list  = audio_data["wav"]
     prompt    = audio_data["prompt"]
-    languages = audio_data["languages"]
+    setting_language = audio_data["languages"]
 
     # if prompt == [''] or prompt == ['None'] or prompt is None:
     #     prompt = ''
@@ -151,18 +151,20 @@ def get_local_transcription(audio_data):
     if type(prompt) == list:
         if len(prompt) > 0:
             prompt = prompt[0]
-    if (languages == ['']) or (languages == ['None']) or (languages is None) or (languages == [None]):
-        languages = None
+    if (setting_language == ['']) or (setting_language == ['None']) or (setting_language is None) or (setting_language == [None]):
+        setting_language = None
+    else:
+        setting_language = setting_language[0]
 
     wav     = [np.float(i) for i in wav_list]
     audio   = whisper.pad_or_trim(np.array(wav)).astype('float32')
     mel     = whisper.log_mel_spectrogram(audio).to('cuda')
     try:
-        options = whisper.DecodingOptions(fp16=True, task='transcribe', beam_size=5, prompt = prompt, language=languages)
+        options = whisper.DecodingOptions(fp16=True, task='transcribe', beam_size=5, prompt = prompt, language=setting_language)
         result  = whisper.decode(settings.audio_model, mel, options)
     except Exception as e:
         print(f"Got exception: {e}")
-        print(f"languages = {languages}")
+        print(f"languages = {setting_language}")
         print(f"prompt = {prompt}")
         print("\n")
     return [result]
@@ -265,8 +267,11 @@ def inference_file(audio):
             else:
                 text, lang = transcribe_chunk(wav, prompt = None)
 
-            settings.transcribe += text
-            settings.transcription_lang = lang
+            settings.transcribe = text
+            if (lang == ['']) or (lang == ['None']) or (lang is None) or (lang == [None]) or (lang == []):
+                settings.curr_lang = ''
+            else:
+                settings.curr_lang = settings.LANGUAGES[lang]
 
         print(f"detect langs ={settings.languages}")
         if len(settings.languages) > 0:
