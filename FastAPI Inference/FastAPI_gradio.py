@@ -109,8 +109,8 @@ def change_settings(settings_record_wav, settings_decoding_lang, settings_use_pr
 
 def update_text_whisper_display_results():
 
-    #text_to_show = build_html_table(settings.l_phrases, settings.transcription_lang)
-    text_to_show = build_html_res(settings.l_phrases, settings.transcription_lang)
+    #text_to_show = build_html_table(settings.transcription, settings.transcription_lang)
+    text_to_show = build_html_res(settings.transcription, settings.transcription_lang)
     return text_to_show
 
 

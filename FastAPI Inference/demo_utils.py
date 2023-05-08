@@ -276,7 +276,8 @@ def build_html_res(l_text, l_lang):
         if len(l_text[i]) == 0 or l_text[i] == "":
             continue
         all_text.append(l_text[i])
-        all_lang.append(l_lang[i])
+        if len(l_lang) > i:
+            all_lang.append(l_lang[i])
 
     #
     #   save only 20
@@ -291,7 +292,9 @@ def build_html_res(l_text, l_lang):
     html_res = []
     for i in range(len(all_text)):
         text = all_text[i]
-        lang = all_lang[i]
+        lang = None
+        if len(l_lang) > i:
+            lang = all_lang[i]
         if lang == "he":
             html_res.append(f"<p align='right'> {text} </p>")
         else:
@@ -542,6 +545,7 @@ def realtime():
 
                     # remove all non-text characters, including emojis, but preserve punctuation marks
                     text = re.sub(r'[^\w\s\.,!?\']', '', text)
+                    print(f"After filtering, the text is: {text}")
                     # If we detected a pause between recordings, add a new item to our transcripion.
                     # Otherwise, edit the existing one.
                     if phrase_complete:
@@ -583,17 +587,18 @@ def filter_bad_results(text, lang, compression_ratio, no_speech_prob, avg_logpro
     'MBC 뉴스 이덕영입니다'.lower()]
 
     should_skip = False
+    print(f"\t-->compression_ratio: {round(compression_ratio,2)} , no_speech_prob={round(no_speech_prob,2)}, avg_logprob={round(avg_logprob,2)}")
+    
 
     if compression_ratio > settings.compression_ratio_threshold:
-        print(f"\t-->transcription aborted due to compression_ratio ({compression_ratio} > {settings.compression_ratio_threshold}), Language: {lang}, Text: {text}")
+        print(f"\t-->transcription aborted due to compression_ratio ({round(compression_ratio,2)} > {settings.compression_ratio_threshold}), Language: {lang}, Text: {text}")
         should_skip = True
     if avg_logprob < settings.logprob_threshold:
-        print(f"\t-->transcription aborted due to avg_logprob: {avg_logprob} < {settings.logprob_threshold}, Language: {lang}, Text: {text}")
+        print(f"\t-->transcription aborted due to avg_logprob: {round(avg_logprob,2)} < {settings.logprob_threshold}, Language: {lang}, Text: {text}")
         should_skip = True
     if no_speech_prob > settings.no_speech_threshold:
-        print(f"\t-->transcription aborted due to no_speech_prob: {no_speech_prob} > {settings.no_speech_threshold}, Language: {lang}, Text: {text}")
+        print(f"\t-->transcription aborted due to no_speech_prob: {round(no_speech_prob,2)} > {settings.no_speech_threshold}, Language: {lang}, Text: {text}")
         should_skip = True
-    low_text = text.lower()
 
     for exp in bad_expressions:
         if exp in text.lower():
