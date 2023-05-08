@@ -74,6 +74,11 @@ def transcribe_chunk_live(audio, prompt = None):
         speech_timestamps = settings.get_speech_timestamps(audio, settings.vad_debug, sampling_rate=16000)
         if len(speech_timestamps) != 0:
             audio             = settings.collect_chunks(speech_timestamps, audio)
+        else:
+            print("!!!!!!!!!!!!!!!!")
+            print("After VAD there is no speech here, return nothing!")
+            print("!!!!!!!!!!!!!!!!")
+            return None
         end = time.time()
         num_of_samples_after_vad = len(audio)
         print(f"[transcribe_chunk_live]: VAD2 took {end - start} seconds\n\tBefore VAD: {round(num_of_samples_before_vad/16000, 2)} seconds\n\tAfter VAD: {round(num_of_samples_after_vad/16000, 2)} seconds")
@@ -122,6 +127,8 @@ def transcribe_chunk(audio):
     :return: str: transcription
     """
     res = transcribe_chunk_live(audio)
+    if res is None:
+        return "", ""
     text = res['text'].strip()
     lang = res['language']
     return text, lang
@@ -583,6 +590,7 @@ def filter_bad_results(text, lang, compression_ratio, no_speech_prob, avg_logpro
     bad_expressions = \
     ['thanks for watching',
     'thank you for watching',
+    'Thank you so much for watching'.lower(),
     'Share this video with your friends on social media'.lower(),
     'MBC 뉴스 이덕영입니다'.lower()]
 
@@ -596,7 +604,7 @@ def filter_bad_results(text, lang, compression_ratio, no_speech_prob, avg_logpro
     if avg_logprob < settings.logprob_threshold:
         print(f"\t-->transcription aborted due to avg_logprob: {round(avg_logprob,2)} < {settings.logprob_threshold}, Language: {lang}, Text: {text}")
         should_skip = True
-    if no_speech_prob > settings.no_speech_threshold:
+    if no_speech_prob > settings.no_speech_threshold and avg_logprob < -0.5:
         print(f"\t-->transcription aborted due to no_speech_prob: {round(no_speech_prob,2)} > {settings.no_speech_threshold}, Language: {lang}, Text: {text}")
         should_skip = True
 
