@@ -129,8 +129,12 @@ def transcribe_chunk(audio, prompt):
     res = transcribe_chunk_live(audio, prompt)
     if res is None:
         return "", ""
-    text = res.text.strip()
-    lang = res.language
+    if settings.RUN_LOCAL:
+        text = res.text.strip()
+        lang = res.language
+    else:
+        text = res['text'].strip()
+        lang = res['language']
     return text, lang
 
 
