@@ -129,8 +129,8 @@ def transcribe_chunk(audio, prompt):
     res = transcribe_chunk_live(audio, prompt)
     if res is None:
         return "", ""
-    text = res['text'].strip()
-    lang = res['language']
+    text = res.text.strip()
+    lang = res.language
     return text, lang
 
 
@@ -253,9 +253,9 @@ def inference_file(audio):
                 fileName = audio.split("/")[-1][0:-10]
 
                 # --- if we want to get hard coded text
-                if fileName == "last_whisper":
-                    text = "בדיקה קבועה מראש"
-                    lang = "he"
+                if fileName + '.mp3' in settings.prefiles_cv10:
+                    text = settings.prefiles_cv10[fileName + '.mp3']
+                    lang = "ru"
                 else:
                     text, lang = transcribe_chunk(wav, prompt = None)
             else:
