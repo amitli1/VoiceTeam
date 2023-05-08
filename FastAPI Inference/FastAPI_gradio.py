@@ -107,10 +107,41 @@ def change_settings(settings_record_wav, settings_decoding_lang, settings_use_pr
     elif settings_decoding_lang == "English":
         settings.settings_decoding_lang = ["en"]
 
+
+def show_html_last_results(l_transcription):
+
+    all_text = []
+
+    #
+    #   copy just not empty text
+    #
+    for i in range(len(l_transcription)):
+        if len(l_transcription[i]) == 0 or l_transcription[i] == "":
+            continue
+        all_text.append(l_transcription[i])
+
+    #
+    #   save only 20
+    #
+    if len(all_text) > 20:
+        all_text = all_text[-20:]
+
+    #
+    #   create results
+    #
+    html_res = []
+    for i in range(len(all_text)):
+        text = all_text[i]
+        html_res.append(f"<p align='center'> {text} </p>")
+
+    html_table = ''.join(html_res)
+    return html_table
+
 def update_text_whisper_display_results():
 
     #text_to_show = build_html_table(settings.transcription, settings.transcription_lang)
-    text_to_show = build_html_res(settings.transcription, settings.transcription_lang)
+    #text_to_show = build_html_res(settings.transcription, settings.transcription_lang)
+    text_to_show = show_html_last_results(settings.transcription)
     return text_to_show
 
 
