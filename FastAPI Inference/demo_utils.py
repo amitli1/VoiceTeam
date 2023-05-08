@@ -87,27 +87,29 @@ def transcribe_chunk_live(audio, prompt = None):
         if settings.RUN_LOCAL:
             res = get_local_transcription(audio_data)[0]
         else:
-            print("Send request to rambo")
             if audio_data['prompt'] == ['']:
                 audio_data['prompt'] = ['None']
             res = requests.get(settings.LIVE_URL, json=audio_data)
-            print("got response from rambo")
-            res = res.json()[0]
+            if res.status_code != 200:
+                print(f"[ERROR], Got Status code: {res.status_code}")
+                settings.recordingUtil.record_wav_for_investigation(audio, must_record=True, json_data=audio_data)
+                return None
+            tmp = res.json()[0]
+            res = tmp
         end = time.time()
         print(f"[transcribe_chunk_live]: transcribe took {end - start} seconds")
     except Exception as e:
+        print("\nError in transcribe_chunk_live\n")
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        print(exc_type, fname, exc_tb.tb_lineno)
-        print(traceback.format_exc())
-
-        print("\n\n\n\n")
-        print("\nError in transcribe_chunk_live\n")
-        settings.recordingUtil.record_wav_for_investigation(audio, must_record=True, json_data=audio_data)
+        print(f"exc_type: {exc_type}, fname: {fname}, line: {exc_tb.tb_lineno}")
         print(f"\naudio type = {type(audio)}\n")
         print(f"\naudio len = {len(audio)}\n")
+        print(f"\naudio_data[language] = {audio_data['languages']}")
+        print(f"\naudio_data[prompt] = {audio_data['prompt']}")
         print(f"\nspeech_timestamps = {speech_timestamps}")
-        print("\n\n\n\n")
+        settings.recordingUtil.record_wav_for_investigation(audio, must_record=True, json_data=audio_data)
+        print("\n")
         return None
     return res
 
@@ -259,7 +261,7 @@ def inference_file(audio):
 
 
     #text_to_show = show_only_last_rows(settings.transcribe)
-    print(f"---> Total number of whisper results: {len(settings.l_phrases)}, Values: {settings.l_phrases}")
+    #print(f"---> Total number of whisper results: {len(settings.l_phrases)}, Values: {settings.l_phrases}")
     return settings.curr_lang, fig, gr.update(visible=True),  \
         gr.update(visible=True), gr.update(visible=True)
 
@@ -280,8 +282,8 @@ def build_html_res(l_text, l_lang):
     #   save only 20
     #
     if len(all_text) >= 20:
-        del all_text[0]
-        del all_lang[0]
+        all_text = all_text[-20:]
+        all_lang = all_lang[-20:]
 
     #
     #   create results
@@ -439,7 +441,7 @@ def realtime():
         temp_data = audio.get_raw_data()
 
         data_queue.put(temp_data)
-        print("Added to the data_queue")
+        #print("Added to the data_queue")
 
     # Create a background thread that will pass us raw audio bytes.
     # We could do this manually but SpeechRecognizer provides a nice helper.
@@ -529,7 +531,7 @@ def realtime():
                     if len(res_lang) > 0:
                         settings.languages.append(settings.LANGUAGES[res_lang])
 
-                    text = filter_bad_results(text, compression_ratio, no_speech_prob, avg_logprob)
+                    text = filter_bad_results(text, res_lang, compression_ratio, no_speech_prob, avg_logprob)
 
                     if text != "":
                         if len(settings.languages) > settings.num_lang_results:
@@ -565,14 +567,7 @@ def realtime():
                 # Infinite loops are bad for processors, must sleep.
                 time.sleep(0.05)
         except Exception as e:
-            print("\n\n\n")
-            print("\n\n\n*****************************************************\n\n\n")
-            print("\n Exception \n")
-            print("\n")
-            print("\n")
-            print("\n\n\n*****************************************************\n\n\n")
-            print("\n\n\n")
-            print("\n\n\n")
+            print(f"\n **************\n Exception:\n {e} \n *********\n")
         except KeyboardInterrupt:
             break
     if settings.STOP:
@@ -580,7 +575,7 @@ def realtime():
         print("Stopped the listening&recording thread!")
     print('Out of real time')
 
-def filter_bad_results(text, compression_ratio, no_speech_prob, avg_logprob):
+def filter_bad_results(text, lang, compression_ratio, no_speech_prob, avg_logprob):
     bad_expressions = \
     ['thanks for watching',
     'thank you for watching',
@@ -590,13 +585,13 @@ def filter_bad_results(text, compression_ratio, no_speech_prob, avg_logprob):
     should_skip = False
 
     if compression_ratio > settings.compression_ratio_threshold:
-        print(f"\t-->transcription aborted due to compression_ratio ({compression_ratio} > {settings.compression_ratio_threshold} )")
+        print(f"\t-->transcription aborted due to compression_ratio ({compression_ratio} > {settings.compression_ratio_threshold}), Language: {lang}, Text: {text}")
         should_skip = True
     if avg_logprob < settings.logprob_threshold:
-        print(f"\t-->transcription aborted due to avg_logprob: {avg_logprob} < {settings.logprob_threshold}")
+        print(f"\t-->transcription aborted due to avg_logprob: {avg_logprob} < {settings.logprob_threshold}, Language: {lang}, Text: {text}")
         should_skip = True
     if no_speech_prob > settings.no_speech_threshold:
-        print(f"\t-->transcription aborted due to no_speech_prob: {no_speech_prob} > {settings.no_speech_threshold}")
+        print(f"\t-->transcription aborted due to no_speech_prob: {no_speech_prob} > {settings.no_speech_threshold}, Language: {lang}, Text: {text}")
         should_skip = True
     low_text = text.lower()
 
