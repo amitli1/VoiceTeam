@@ -273,7 +273,7 @@ def inference_file(audio):
             settings.curr_lang = mode(settings.languages)
 
         # add results
-        settings.transcription.append(text)
+        settings.transcription = text
 
 
     #text_to_show = show_only_last_rows(settings.transcribe)
@@ -296,11 +296,12 @@ def build_html_res(l_text, l_lang):
             all_lang.append(l_lang[i])
 
     #
-    #   save only 20
+    #   save only last results
     #
-    if len(all_text) >= 20:
-        all_text = all_text[-20:]
-        all_lang = all_lang[-20:]
+    last_results_to_show = 10
+    if len(all_text) >= last_results_to_show:
+        all_text = all_text[-last_results_to_show:]
+        all_lang = all_lang[-last_results_to_show:]
 
     #
     #   create results
@@ -617,7 +618,7 @@ def filter_bad_results(text, lang, compression_ratio, no_speech_prob, avg_logpro
     if avg_logprob < settings.logprob_threshold:
         print(f"\t-->transcription aborted due to avg_logprob: {round(avg_logprob,2)} < {settings.logprob_threshold}, Language: {lang}, Text: {text}")
         should_skip = True
-    if no_speech_prob > settings.no_speech_threshold and avg_logprob < -0.5:
+    if no_speech_prob > settings.no_speech_threshold and avg_logprob < -0.6:
         print(f"\t-->transcription aborted due to no_speech_prob: {round(no_speech_prob,2)} > {settings.no_speech_threshold}, Language: {lang}, Text: {text}")
         should_skip = True
 
