@@ -132,7 +132,7 @@ def show_html_last_results(l_transcription):
     html_res = []
     for i in range(len(all_text)):
         text = all_text[i]
-        html_res.append(f"<p align='center'> {text} </p>")
+        html_res.append(f"<p style='font-size: 24px;' align='center'> {text} </p>")
 
     html_table = ''.join(html_res)
     return html_table
