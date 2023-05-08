@@ -152,7 +152,7 @@ def get_local_transcription(audio_data):
         if len(prompt) > 0:
             prompt = prompt[0]
     if (languages == ['']) or (languages == ['None']) or (languages is None) or (languages == [None]):
-        languages = []
+        languages = None
 
     wav     = [np.float(i) for i in wav_list]
     audio   = whisper.pad_or_trim(np.array(wav)).astype('float32')

@@ -268,6 +268,7 @@ def gradio_main(debug_flag=False, run_local=True):
 
         block.load(update_text_whisper_display_results, None, [textTranscription], every=1)
 
+    print("Starting launch...")
     block.queue().launch(debug=debug_flag, )
 #for debugging on vitaly's computer
     # block.queue().launch(share=False,
