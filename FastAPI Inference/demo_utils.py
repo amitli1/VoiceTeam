@@ -489,8 +489,8 @@ def realtime():
                     last_sample = bytes()
                     print("phrase completed! last_sample reset!")
                     phrase_complete = True
-                # This is the last time we received new audio data from the queue.
-                last_phrase_time = now
+                # # This is the last time we received new audio data from the queue.
+                # last_phrase_time = now
 
                 # Concatenate our current audio data with the latest audio data.
                 while not data_queue.empty():
@@ -525,6 +525,9 @@ def realtime():
                     no_speech_prob = 1
                     avg_logprob = 0
                 else:
+                    # This is the last time we received new audio data from the queue.
+                    last_phrase_time = now
+                    
                     if settings.RUN_LOCAL:
                         text = result.text.strip()
                         res_lang = result.language
