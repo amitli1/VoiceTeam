@@ -485,6 +485,7 @@ def realtime():
             now = datetime.utcnow()
             # Pull raw recorded audio from the queue.
             if not data_queue.empty():
+                print("++++++++++++++++++++++++++++++++++++")
                 phrase_complete = False
                 # If enough time has passed between recordings, consider the phrase complete.
                 # Clear the current working audio buffer to start over with the new data.

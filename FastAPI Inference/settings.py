@@ -38,7 +38,7 @@ def init_globals(run_local=True):
     transcription_lang = []
     l_phrases = []
     languages = []
-    prefiles_cv10 = {t[1]: t[2] for t in pd.read_csv('cv10_transcription.csv').values}
+    prefiles_cv10 = {t[1]: t[2] for t in pd.read_csv('FastAPI Inference/cv10_transcription.csv').values}
     
     #STATIC_URL = static_url
     LIVE_URL = 'http://10.53.140.33:86/gradio_demo_live/'
