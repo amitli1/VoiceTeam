@@ -278,7 +278,7 @@ def inference_file(audio):
             settings.curr_lang = mode(settings.languages)
 
         # add results
-        settings.transcription = text
+        settings.transcription = [text]
 
 
     #text_to_show = show_only_last_rows(settings.transcribe)
