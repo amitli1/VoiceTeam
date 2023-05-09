@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -7,7 +8,7 @@ import torch
 import json
 import numpy as np
 
-
+os.environ["TIKTOKEN_CACHE_DIR"] = "cache"
 audio_model = whisper.load_model('large', 'cuda')
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"],  # Allows all origins
