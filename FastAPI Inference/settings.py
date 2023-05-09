@@ -41,7 +41,9 @@ def init_globals(run_local=True):
     prefiles_cv10 = {t[1]: t[2] for t in pd.read_csv('FastAPI Inference/cv10_transcription.csv').values}
     
     #STATIC_URL = static_url
-    LIVE_URL = 'http://10.53.140.33:86/gradio_demo_live/'
+    ip_vitali = "127.0.0.1:8888"
+    ip_rambo = "10.53.140.33:86"
+    LIVE_URL = f'http://{ip_vitali}/gradio_demo_live/'
     # the number of detected languages results we need to decide the language. If we have less results, we do not decide the language.
     # when we have enough, we keep the last num_lang_results and report it's mean
     num_lang_results = 3
@@ -51,31 +53,36 @@ def init_globals(run_local=True):
     no_speech_threshold = 0.95
     RUN_LOCAL = run_local
     if RUN_LOCAL:
+        print("Starting to load whisper")
         audio_model = whisper.load_model('large', 'cuda')
         #audio_model = whisper.load_model('base', 'cuda')
+        print("Finished loading whisper")
 
     if RUN_LOCAL:
         loacl_cashe = f"{os.path.expanduser('~')}/.cache/torch/hub/snakers4_silero-vad_master"
         print(f"Run silero-vad from loacl_cashe")
         vad_path = loacl_cashe
         source = "local"
+        
     else:
         print(f"Run silero-vad from internet (torch hub)")
         internet_path = "snakers4/silero-vad"
         vad_path = internet_path
         source = "github"
-
+    print("Starting to load Silero VAD1")
     vad, vad_utils = torch.hub.load(repo_or_dir=vad_path,
                                     model='silero_vad',
                                     source = source,
                                     force_reload=False,
                                     onnx=False)
-
+    print("Finished loading Silero VAD1")
+    print("Starting to load Silero VAD2")
     vad_debug, vad_utils = torch.hub.load(repo_or_dir=vad_path,
                                     model='silero_vad',
                                     source = source,
                                     force_reload=False,
                                     onnx=False)
+    print("Finished loading Silero VAD2")
 
     print('loaded silero')
     global get_speech_timestamps, read_audio, save_audio, collect_chunks
