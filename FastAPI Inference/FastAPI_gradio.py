@@ -142,7 +142,9 @@ def update_text_whisper_display_results():
 
     #text_to_show = build_html_table(settings.transcription, settings.transcription_lang)
     #text_to_show = build_html_res(settings.transcription, settings.transcription_lang)
-    text_to_show = show_html_last_results(settings.transcription)
+    #text_to_show = show_html_last_results(settings.transcription)
+    #text_to_show = show_only_last_rows(settings.transcribe)    
+    text_to_show = show_only_last_rows(settings.transcription)        
     return text_to_show
 
 
@@ -154,9 +156,13 @@ def gradio_main(debug_flag=False, run_local=True):
     #result-textarea_rtl textarea {
       text-align: right;
     }
+    #text_box textarea {
+      text-align: center;
+      font-size: 24px;
+    }
     """
     block = gr.Blocks(theme=gr.themes.Glass(), css=tiny_css)
-
+    
     with block:
         with gr.Tab("Main"):
             gr.HTML(
@@ -214,22 +220,23 @@ def gradio_main(debug_flag=False, run_local=True):
                             trans_btn3 = gr.Button("Transcribe", visible=False)
 
                 text = gr.Textbox(show_label=True, elem_id="result-textarea", label = "Detected Language:")
-                textTranscription = gr.outputs.HTML()
+                #textTranscription = gr.outputs.HTML()
+                textTranscription = gr.Textbox(elem_id='text_box')
 
                 plot = gr.Plot(show_label=False, visible=False)
 
                 with gr.Row():
                     clear_btn = gr.Button("Clear", visible=False)
-                    play_btn = gr.Button('Play audio', visible=False)
+                    # play_btn = gr.Button('Play audio', visible=False)
 
                 radio.change(fn=change_audio, inputs=radio, outputs=[audio, trans_btn, audio2, trans_btn3, audio3])
 
-                trans_btn.click(inference_file, audio2, [text, plot, plot,  clear_btn, play_btn])
-                trans_btn3.click(inference_file, audio3, [text, plot, plot,  clear_btn, play_btn])
-                audio.stream(inference_file, [audio], [text, plot, plot,  clear_btn, play_btn])
+                trans_btn.click(inference_file, audio2, [text, plot, plot,  clear_btn])
+                trans_btn3.click(inference_file, audio3, [text, plot, plot,  clear_btn])
+                audio.stream(inference_file, [audio], [text, plot, plot,  clear_btn])
 
-                play_btn.click(play_sound)
-                clear_btn.click(clear, inputs=[], outputs=[text, plot, plot, textTranscription, clear_btn, play_btn])
+                # play_btn.click(play_sound)
+                clear_btn.click(clear, inputs=[], outputs=[text, plot, plot, textTranscription, clear_btn])
 
                 gr.HTML('''
                 <div class="footer">
@@ -267,7 +274,7 @@ def gradio_main(debug_flag=False, run_local=True):
         with gr.Tab("Version"):
             gr.Label("Version 1.0")
 
-        block.load(update_text_whisper_display_results, None, [textTranscription], every=1)
+        block.load(update_text_whisper_display_results, None, [textTranscription], every=0.5)
 
     print("Starting launch...")
     block.queue().launch(debug=debug_flag, )

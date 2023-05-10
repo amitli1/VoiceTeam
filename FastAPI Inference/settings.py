@@ -16,7 +16,7 @@ def init_globals(run_local=True):
            STATIC_URL, LIVE_URL, speech_probs, LANGUAGES, get_speech_timestamps, collect_chunks, vad_debug, \
            current_streamming_time, recordingUtil, num_lang_results, compression_ratio_threshold, logprob_threshold, \
            no_speech_threshold, settings_record_wav, settings_decoding_lang, settings_use_prompt, RUN_LOCAL, audio_model, html_transcribe,  transcription_lang, \
-            settings_record_for_inverstigation, settings_record_text_to_file, l_phrases, prefiles_cv10
+            settings_record_for_inverstigation, settings_record_text_to_file, l_phrases, prefiles_cv10, vad_iterator1, vad_iterator2
 
 
     settings_record_wav = False
@@ -39,6 +39,7 @@ def init_globals(run_local=True):
     l_phrases = []
     languages = []
     prefiles_cv10 = {t[1]: t[2] for t in pd.read_csv('FastAPI Inference/cv10_transcription.csv').values}
+    # prefiles_cv10 = {t[1]: t[2] for t in pd.read_csv('cv10_transcription.csv').values}
     
     #STATIC_URL = static_url
     ip_vitali = "127.0.0.1:8888"
@@ -91,6 +92,7 @@ def init_globals(run_local=True):
      read_audio,
      VADIterator,
      collect_chunks) = vad_utils
-    vad_iterator = VADIterator(vad)
+    vad_iterator1 = VADIterator(vad)
+    vad_iterator2 = VADIterator(vad)
 
     LANGUAGES = whisper.tokenizer.LANGUAGES

@@ -71,17 +71,18 @@ def transcribe_chunk_live(audio, prompt = None):
         # settings.recordingUtil.record_wav(audio)
         num_of_samples_before_vad = len(audio)
         start = time.time()
+        
         speech_timestamps = settings.get_speech_timestamps(audio, settings.vad_debug, sampling_rate=16000)
         if len(speech_timestamps) != 0:
             audio             = settings.collect_chunks(speech_timestamps, audio)
         else:
-            print("!!!!!!!!!!!!!!!!")
-            print("After VAD there is no speech here, return nothing!")
-            print("!!!!!!!!!!!!!!!!")
+            # print("!!!!!!!!!!!!!!!!")
+            # print("After VAD there is no speech here, return nothing!")
+            # print("!!!!!!!!!!!!!!!!")
             return None
         end = time.time()
         num_of_samples_after_vad = len(audio)
-        print(f"[transcribe_chunk_live]: VAD2 took {end - start} seconds\n\tBefore VAD: {round(num_of_samples_before_vad/16000, 2)} seconds\n\tAfter VAD: {round(num_of_samples_after_vad/16000, 2)} seconds")
+        # print(f"[transcribe_chunk_live]: VAD2 took {end - start} seconds\n\tBefore VAD: {round(num_of_samples_before_vad/16000, 2)} seconds\n\tAfter VAD: {round(num_of_samples_after_vad/16000, 2)} seconds")
         start = time.time()
 
         if prompt is None:
@@ -94,7 +95,11 @@ def transcribe_chunk_live(audio, prompt = None):
         else:
             if audio_data['prompt'] == ['']:
                 audio_data['prompt'] = ['None']
+            print(f"*************************>   Send to rambo")
             res = requests.get(settings.LIVE_URL, json=audio_data)
+            tmp_print = res.json()[0]
+            tmp_print = tmp_print["text"]
+            # print(f"*************************>   Got results from rambo: {res.status_code}, Text: {tmp_print}")
             if res.status_code != 200:
                 print(f"[ERROR], Got Status code: {res.status_code}")
                 settings.recordingUtil.record_wav_for_investigation(audio, must_record=True, json_data=audio_data)
@@ -191,34 +196,26 @@ def inference_file(audio):
 
     wav = torch.from_numpy(librosa.load(audio, sr=16000)[0])
     settings.audio_vec = torch.cat((settings.audio_vec, wav))
-    speech_probs = settings.speech_probs
 
     # j is the start point (in seconds) where the vad graph will start
-    j = max(0, len(speech_probs) // 10 - 30)
+    j = max(0, len(settings.speech_probs) // 10 - 30)
 
-    window_size_samples = 1600
+    
     x = []
     y = []
     start_time = time.time()
-    for i in range(0, len(wav), window_size_samples):
-        chunk = wav[i: i + window_size_samples]
-        if len(chunk) < window_size_samples:
-            break
-
-        speech_prob = settings.vad(chunk, 16000).item()
-        speech_probs.append(speech_prob)
-    settings.speech_probs = speech_probs
-    if len(speech_probs) > 300:
-        speech_probs = speech_probs[-300:]
-    settings.vad_iterator.reset_states()
+    window_size_samples = 1600
+    settings.speech_probs.extend(get_speech_probs(settings.vad, settings.vad_iterator1,wav, window_size_samples))
+    if len(settings.speech_probs) > 300:
+        settings.speech_probs = settings.speech_probs[-300:]
     end_time = time.time()
     #print(f"[inference_file]: VAD1 took {end_time - start_time} seconds")
 
     sample_per_sec = 16000 / window_size_samples
     if not settings.streaming:
         j = max(0, len(wav) // 16000 - 30)
-    x.extend([j + i / sample_per_sec for i in range(len(speech_probs))])
-    y.extend(speech_probs)
+    x.extend([j + i / sample_per_sec for i in range(len(settings.speech_probs))])
+    y.extend(settings.speech_probs)
 
     df = pd.DataFrame()
     df['Time'] = x
@@ -274,8 +271,8 @@ def inference_file(audio):
                 settings.curr_lang = settings.LANGUAGES[lang]
 
         print(f"detect langs ={settings.languages}")
-        if len(settings.languages) > 0:
-            settings.curr_lang = mode(settings.languages)
+        # if len(settings.languages) > 0:
+        #     settings.curr_lang = mode(settings.languages)
 
         # add results
         settings.transcription = [text]
@@ -285,6 +282,19 @@ def inference_file(audio):
     #print(f"---> Total number of whisper results: {len(settings.l_phrases)}, Values: {settings.l_phrases}")
     return settings.curr_lang, fig, gr.update(visible=True),  \
         gr.update(visible=True), gr.update(visible=True)
+
+def get_speech_probs(vad_model, vad_iterator, wav, window_size_samples = 1600):
+    speech_probs = []
+    for i in range(0, len(wav), window_size_samples):
+        chunk = wav[i: i + window_size_samples]
+        if len(chunk) < window_size_samples:
+            break
+
+        speech_prob = vad_model(chunk, 16000).item()
+        speech_probs.append(speech_prob)
+    
+    vad_iterator.reset_states()
+    return speech_probs
 
 def build_html_res(l_text, l_lang):
     all_text = []
@@ -368,10 +378,9 @@ def build_html_table(l_text, l_lang):
     return html_table
 
 
-def show_only_last_rows(l_text, num_of_last_lines=20):
+def show_only_last_rows(l_text, num_of_last_lines=10):
 
-    res = []
-    l_text = l_text.split("\n")
+    res = []    
     if len(l_text) == 0:
         return ""
     for val in reversed(l_text):
@@ -381,7 +390,7 @@ def show_only_last_rows(l_text, num_of_last_lines=20):
         num_of_last_lines = num_of_last_lines - 1
         if num_of_last_lines == 0:
             break
-
+    
     if len(res) == 0:
         return ""
     if len(res) == 1:
@@ -389,6 +398,27 @@ def show_only_last_rows(l_text, num_of_last_lines=20):
     res.reverse()
     res = '\n'.join(res)
     return res
+
+
+    # res = []
+    # l_text = l_text.split("\n")
+    # if len(l_text) == 0:
+    #     return ""
+    # for val in reversed(l_text):
+    #     if (val == "\n") or (len(val) == 0) or (val == ""):
+    #         continue
+    #     res.append(val)
+    #     num_of_last_lines = num_of_last_lines - 1
+    #     if num_of_last_lines == 0:
+    #         break
+
+    # if len(res) == 0:
+    #     return ""
+    # if len(res) == 1:
+    #     return res
+    # res.reverse()
+    # res = '\n'.join(res)
+    # return res
 
 def convert_text_to_html(full_html, current_text, l_current_lang):
     '''
@@ -495,15 +525,16 @@ def realtime():
             now = datetime.utcnow()
             # Pull raw recorded audio from the queue.
             if not data_queue.empty():
-                print("++++++++++++++++++++++++++++++++++++")
+                # print(f"{now}: ++++++++++++++++++++++++++++++++++++")
+                start_iteration = time.time()
                 phrase_complete = False
                 # If enough time has passed between recordings, consider the phrase complete.
                 # Clear the current working audio buffer to start over with the new data.
-                if last_phrase_time is not None:
-                    print(f"Time passed between recordings: {now - last_phrase_time}")
+                # if last_phrase_time is not None:
+                    # print(f"Time passed between recordings: {now - last_phrase_time}")
                 if last_phrase_time and now - last_phrase_time > timedelta(seconds=pause_timeout):
                     last_sample = bytes()
-                    print("phrase completed! last_sample reset!")
+                    # print("phrase completed! last_sample reset!")
                     phrase_complete = True
                 # # This is the last time we received new audio data from the queue.
                 # last_phrase_time = now
@@ -512,7 +543,7 @@ def realtime():
                 while not data_queue.empty():
                     data = data_queue.get()
                     last_sample += data
-                print("Got everything from the data queue")
+                
                 # Use AudioData to convert the raw data to wav data.
                 audio_data = sr.AudioData(last_sample, source.SAMPLE_RATE, source.SAMPLE_WIDTH)
                 wav_bytes = audio_data.get_wav_data(convert_rate=16000)
@@ -542,7 +573,7 @@ def realtime():
                     avg_logprob = 0
                 else:
                     # This is the last time we received new audio data from the queue.
-                    last_phrase_time = now
+                    # last_phrase_time = now
                     
                     if settings.RUN_LOCAL:
                         text = result.text.strip()
@@ -563,11 +594,15 @@ def realtime():
                     text = filter_bad_results(text, res_lang, compression_ratio, no_speech_prob, avg_logprob)
 
                     if text != "":
-                        if len(settings.languages) > settings.num_lang_results:
-                            settings.languages.pop(0)
+                        last_phrase_time = now
+                        print(f"{last_phrase_time}: updating last phrase time!")
+                    # if text != "":
+                    #     if len(settings.languages) > settings.num_lang_results:
+                    #         settings.languages.pop(0)
 
-                    if len(settings.languages) == settings.num_lang_results:
-                        settings.curr_lang = mode(settings.languages)
+                    # if len(settings.languages) == settings.num_lang_results:
+                    #     settings.curr_lang = mode(settings.languages)
+                    settings.curr_lang = settings.LANGUAGES[res_lang]
 
                     # remove all non-text characters, including emojis, but preserve punctuation marks
                     text = re.sub(r'[^\w\s\.,!?\']', '', text)
@@ -583,8 +618,9 @@ def realtime():
                             settings.transcription_lang.append(res_lang)
                             settings.l_phrases.append(text)
                     else:
-                        print("replacing the last line with the current text:")
-                        settings.transcription[-1] = text
+                        if text != "":
+                            print("replacing the last line with the current text:")
+                            settings.transcription[-1] = text
 
                     # print(f"Full transcription so far:\n{settings.transcription}\n")
                     #print(f"Last transcription :\n{text}\n")
@@ -593,7 +629,8 @@ def realtime():
                         settings.transcribe = ''
                         for line in settings.transcription:
                             settings.transcribe += line + '\n'
-
+                
+                print(f"Realtimem iteration time: {time.time()-start_iteration} seconds")
                 # Infinite loops are bad for processors, must sleep.
                 time.sleep(0.05)
         except Exception as e:
@@ -611,7 +648,8 @@ def filter_bad_results(text, lang, compression_ratio, no_speech_prob, avg_logpro
     'thank you for watching',
     'Thank you so much for watching'.lower(),
     'Share this video with your friends on social media'.lower(),
-    'MBC 뉴스 이덕영입니다'.lower()]
+    'MBC 뉴스 이덕영입니다'.lower(),
+    'תודה שראיתם את הסרטון']
 
     should_skip = False
     print(f"\t-->compression_ratio: {round(compression_ratio,2)} , no_speech_prob={round(no_speech_prob,2)}, avg_logprob={round(avg_logprob,2)}")
@@ -623,7 +661,7 @@ def filter_bad_results(text, lang, compression_ratio, no_speech_prob, avg_logpro
     if avg_logprob < settings.logprob_threshold:
         print(f"\t-->transcription aborted due to avg_logprob: {round(avg_logprob,2)} < {settings.logprob_threshold}, Language: {lang}, Text: {text}")
         should_skip = True
-    if no_speech_prob > settings.no_speech_threshold and avg_logprob < -0.6:
+    if no_speech_prob > settings.no_speech_threshold and avg_logprob < -0.7:
         print(f"\t-->transcription aborted due to no_speech_prob: {round(no_speech_prob,2)} > {settings.no_speech_threshold}, Language: {lang}, Text: {text}")
         should_skip = True
 

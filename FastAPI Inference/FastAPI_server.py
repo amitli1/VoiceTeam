@@ -31,7 +31,7 @@ def get_transcription(whisper_: WhisperInput):
     if len(prompt) == 0:
         prompt = None
     
-    options = whisper.DecodingOptions(fp16=True, task='transcribe', beam_size=5, language=whisper_.languages[0], prompt = prompt)
+    options = whisper.DecodingOptions(fp16=True, task='transcribe', beam_size=5, language=whisper_.languages[0], prompt = prompt, sample_len=100)
     result = whisper.decode(audio_model, mel, options)
     # print(result)
     return [result]
