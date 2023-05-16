@@ -224,7 +224,7 @@ def schedule_whisper_job():
     #
     html_text = html_utils.build_html_table(global_parameters.all_texts)
     html_text = ''.join(html_text)
-    return  global_parameters.last_lang , html_text
+    return  html_text
 
 
 
@@ -388,8 +388,6 @@ def create_gui():
 
         with gr.Tab("Real Time"):
             stream_input       = gr.Audio(source="microphone")
-            output_stream_lang = gr.Label(label = "Detect Lanugage: ")
-            #output_stream_text = gr.Textbox(label = "Whisper Results:")
             output_stream_text = gr.outputs.HTML(label="Whisper Results:")
             output_stream_plt  = gr.Plot(labal = "Voice Activity Detection:")
 
@@ -424,7 +422,7 @@ def create_gui():
 
         demo.load(schedule_vad_job, None, [output_stream_plt], every=global_parameters.VAD_JOB_RATE)
         demo.load(schedule_preprocess_speech_job, None, None, every=2)
-        demo.load(schedule_whisper_job, None, [output_stream_lang, output_stream_text], every=1)
+        demo.load(schedule_whisper_job, None, [output_stream_text], every=1)
 
     return demo
 
