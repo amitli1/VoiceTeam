@@ -1,4 +1,4 @@
-# App for demonstrations
+# App for demonstrations 
 
 This repository contains files for live ASR and VAD demo based on Gradio interface.
 <br>
