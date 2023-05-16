@@ -5,7 +5,7 @@ This repository contains files for live ASR and VAD demo based on Gradio interfa
 The directories above containes files for lunching the demo.
 </ul>
 <img style="text-align: center; max-width: 650px; margin: 0 auto;"
-                src="App_Design.jpg", 
+                src="AppDesign.jpg", 
                 width="1500" height="300">
 
 # VoiceTeam
