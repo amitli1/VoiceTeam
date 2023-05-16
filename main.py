@@ -62,19 +62,7 @@ def schedule_preprocess_speech_job():
         logging.debug("Add new line (sentence finished)")
         global_parameters.processed_queue.put("\n")
         return
-    # TODO: if we didn't add "\n" add
 
-    #
-    #   Step 5: handle sub speech (no at the end edge)
-    #
-    # for val in speech_timestamps:
-    #     start_sample = max(val['start']-1600,0)
-    #     end_sample   = min(val['end'] + 1600, len(speech))
-    #     if end_sample >= len(speech):
-    #         break
-    #     tmp_speech = speech[start_sample:end_sample].numpy()
-    #     global_parameters.processed_queue.put(tmp_speech)
-    #     logging.info(f"Push speech to whisper Q, audio length: {round(len(tmp_speech) / 16000, 2)} seconds, |Q| = {global_parameters.processed_queue.qsize()}")
     for val in speech_timestamps:
         start_sample = val['start']
         end_sample   = val['end']
@@ -90,12 +78,6 @@ def schedule_preprocess_speech_job():
         logging.debug("Add new line (sentence finished)")
         global_parameters.processed_queue.put("\n")
 
-    #
-    #   Step 6: save last unprcoess voice (when VAD end at the edge)
-    #
-    # end_with_threshold = min(val['end'] + 1600, len(speech))
-    # if end_with_threshold>= len(speech):
-    #     global_parameters.previous_speech = speech[speech_timestamps[-1]["start"] :].numpy()
     if val['end']  >= len(speech):
         global_parameters.previous_speech = speech[speech_timestamps[-1]["start"]:].numpy()
 
