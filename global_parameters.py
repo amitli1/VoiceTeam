@@ -1,15 +1,24 @@
 import torch
 import queue
+import os
 from recording_util   import RecordingUtil
 import pandas         as pd
 
 #
 #   VAD
 #
-vad_model, vad_utils   = torch.hub.load(repo_or_dir='snakers4/silero-vad', model='silero_vad', force_reload=False)
+USE_LOCAL_VAD          = False
+if USE_LOCAL_VAD is True:
+    vad_path   = f"{os.path.expanduser('~')}/.cache/torch/hub/snakers4_silero-vad_master"
+    vad_source = "local"
+else:
+    vad_path   = 'snakers4/silero-vad'
+    vad_source = "github"
+
+vad_model, vad_utils   = torch.hub.load(repo_or_dir=vad_path, model='silero_vad', source=vad_source, force_reload=False, onnx=False)
 (vad_get_speech_timestamps, vad_save_audio, vad_read_audio, VADIterator, vad_collect_chunks) = vad_utils
 
-vad_speech_model, vad_utils2               = torch.hub.load(repo_or_dir='snakers4/silero-vad', model='silero_vad', force_reload=False)
+vad_speech_model, vad_utils2               = torch.hub.load(repo_or_dir=vad_path, model='silero_vad', source=vad_source, force_reload=False, onnx=False)
 (speech_get_speech_timestamps, _, _, _, _) = vad_utils2
 vad_iterator                               = VADIterator(vad_model)
 
