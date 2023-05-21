@@ -45,8 +45,8 @@ def build_html_table(all_results):
             html_table.append(f"<tr align='right'>")
         else:
             html_table.append(f"<tr align='left'>")
-        html_table.append(f"<td> {text}</td>")
         html_table.append(f"<td> {settings.LANGUAGES[lang]} </td>")
+        html_table.append(f"<td> {text}</td>")
         html_table.append("</tr>")
 
         count_num_of_results = count_num_of_results + 1

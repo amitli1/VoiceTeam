@@ -179,6 +179,7 @@ def add_new_whisper_results(all_results, text, lang):
            if text == "\n":
                all_results.append((text, lang))
            else:
+               logging.info(f"Replace Last Text: {all_results[-1][0]} With: {text}")
                all_results[-1] = (text, lang)
 
     # if text == "\n":
@@ -214,7 +215,7 @@ def schedule_whisper_job():
                 if text != "":
                     global_parameters.last_lang = language
                     global_parameters.all_texts = add_new_whisper_results(global_parameters.all_texts, text, language)
-                    logging.info(f"Got Good Results from Whisper, Text: {text} \tLanguage: {language}")
+                    logging.info(f"Got Good Results from Whisper, Text: {text} \tLanguage: {language}, Speech Len: {round(len(speech)/16000, 2)} Seconds")
 
                 if settings.record_to_wav is True:
                     global_parameters.recordingUtil.record_wav(speech, sample_rate=16000)
@@ -441,7 +442,7 @@ if __name__ == "__main__":
     # demo.queue().launch(share=False,
     #                     debug=False,
     #                     server_name="0.0.0.0",
-    #                     server_port=8432,
+    #                     server_port=8433,
     #                     ssl_verify=False,
     #                     ssl_certfile="cert.pem",
     #                     ssl_keyfile="key.pem")
