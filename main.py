@@ -1,5 +1,27 @@
 import logging
-logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
+import datetime
+from os      import listdir
+from os.path import isfile, join
+
+
+def init_logger():
+    current_time = datetime.datetime.now()
+    onlyfiles = [f[f.rfind("_") + 1:-4] for f in listdir("./logs/") if isfile(join("./logs/", f))]
+    if len(onlyfiles) == 0:
+        log_file_name = f"./logs/log_{current_time.year}_{current_time.month}_{current_time.day}_R_1.log"
+    else:
+        last_run = int(onlyfiles[-1])
+        log_file_name = f"./logs/log_{current_time.year}_{current_time.month}_{current_time.day}_R_{last_run + 1}.log"
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s : %(levelname)s : %(message)s',
+        handlers=[
+            logging.FileHandler(log_file_name),
+            #logging.StreamHandler()
+        ]
+    )
+init_logger()
 
 
 import pandas               as pd
@@ -203,8 +225,9 @@ def schedule_whisper_job():
         for i in range(q_len):
             speech = global_parameters.processed_queue.get()
 
-            if speech == "\n":
-                global_parameters.all_texts = add_new_whisper_results(global_parameters.all_texts, "\n", "he")
+            if type(speech) == str:
+                if speech == "\n":
+                    global_parameters.all_texts = add_new_whisper_results(global_parameters.all_texts, "\n", "he")
             else:
                 audio_data = {}
                 audio_data["wav"]       = [str(ii) for ii in speech.tolist()]

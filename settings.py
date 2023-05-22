@@ -3,7 +3,7 @@ import logging
 import torch
 import os
 import whisper
-from pyannote.audio import Pipeline
+#from pyannote.audio import Pipeline
 
 #
 #   General
