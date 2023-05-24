@@ -38,8 +38,9 @@ use_language                = None
 #
 #   local whisper
 #
-RUN_LOCAL_WHISPER = False
-whisper_model     = None
+RUN_LOCAL_WHISPER  = True
+whisper_model      = None
+whisper_model_type = "base" # for local running
 
 #
 #   offline diarization

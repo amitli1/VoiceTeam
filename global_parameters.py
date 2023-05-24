@@ -33,6 +33,7 @@ speech_queue    = queue.Queue()
 processed_queue = queue.Queue()
 vad_queue       = queue.Queue()
 
+streem_counter  = 0
 previous_speech = None
 last_lang       = ""
 all_texts       = []
@@ -54,3 +55,7 @@ recordingUtil = RecordingUtil()
 #   Common voice files
 #
 d_common_voice_ru = {t[1]: t[2] for t in pd.read_csv('./common_voice_ru/common_voice_ru.csv').values}
+
+#
+
+#

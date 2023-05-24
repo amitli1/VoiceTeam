@@ -6,16 +6,16 @@ from os.path import isfile, join
 
 def init_logger():
     current_time = datetime.datetime.now()
-    onlyfiles = [f[f.rfind("_") + 1:-4] for f in listdir("./logs/") if isfile(join("./logs/", f))]
+    onlyfiles = [int(f[f.rfind("_") + 1:-4]) for f in listdir("./logs/") if isfile(join("./logs/", f))]
     if len(onlyfiles) == 0:
         log_file_name = f"./logs/log_{current_time.year}_{current_time.month}_{current_time.day}_R_1.log"
     else:
-        last_run = int(onlyfiles[-1])
+        last_run = max(onlyfiles)
         log_file_name = f"./logs/log_{current_time.year}_{current_time.month}_{current_time.day}_R_{last_run + 1}.log"
 
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s : %(levelname)s : %(message)s',
+        format='[%(asctime)s : %(levelname)s : %(funcName)s()] %(message)s',
         handlers=[
             logging.FileHandler(log_file_name),
             #logging.StreamHandler()
@@ -50,24 +50,35 @@ import plotly.express                  as px
 def schedule_preprocess_speech_job():
 
     #
-    #   Step 1: collect last (5) seconds speech
+    #   Step 1: collect last seconds speech
     #
     q_len = global_parameters.speech_queue.qsize()
     if q_len == 0:
+        logging.debug("speech_queue is empty -> init streem_counter to 0")
+        global_parameters.streem_counter = 0
         return
     speech = np.array([])
+    start_speech_time = 0
     for i in range(q_len):
-        speech = np.concatenate((speech, global_parameters.speech_queue.get()))
+        speech_cnt, tmp_speech = global_parameters.speech_queue.get()
+        if start_speech_time == 0:
+            start_speech_time = speech_cnt
+        speech                 = np.concatenate((speech, tmp_speech))
 
-    speech_16000 = librosa.resample(speech, orig_sr=global_parameters.MICROPHONE_SAMPLE_RATE, target_sr=16000)
-    speech       = speech_16000
+    speech_16000      = librosa.resample(speech, orig_sr=global_parameters.MICROPHONE_SAMPLE_RATE, target_sr=16000)
+    speech            = speech_16000
+    start_speech_time = start_speech_time * 0.5
 
     #
     #   Step 2: check if we have older speech which we didn't finished to preocess
     #
     if global_parameters.previous_speech is not None:
-        speech = np.concatenate((global_parameters.previous_speech, speech))
+        prev_speech = global_parameters.previous_speech
+        logging.info(f"use previous continues speech of length: {round(len(prev_speech)/16000, 2)} seconds")
+        speech      = np.concatenate((prev_speech, speech))
+        start_speech_time = start_speech_time - len(prev_speech)/16000
     global_parameters.previous_speech = None
+    logging.info(f"Handle speech which start at: {round(start_speech_time, 2)} seconds ")
 
     #
     #   Step 3: run vad
@@ -81,7 +92,7 @@ def schedule_preprocess_speech_job():
     #   Step 4: check if we have speech
     #
     if len(speech_timestamps) == 0:
-        logging.debug("Add new line (sentence finished)")
+        logging.debug("Add new line (sentence finished), and we dont have speech")
         global_parameters.processed_queue.put("\n")
         return
 
@@ -97,7 +108,7 @@ def schedule_preprocess_speech_job():
     #   if we need to add new line
     #
     if val['end'] < len(speech) and ((len(speech) - val['end']) >= 16000*0.2):
-        logging.debug("Add new line (sentence finished)")
+        logging.debug("Add new line (sentence finished) and we have speech")
         global_parameters.processed_queue.put("\n")
 
     if val['end']  >= len(speech):
@@ -366,10 +377,16 @@ def int2float(sound):
 
 def handle_streaming(audio):
 
+    #
+    #   step 1: get audio parameters (speech & sample rate)
+    #
     rate  = audio[0]
     voice = audio[1]
     voice = int2float(voice)
 
+    #
+    #   step 2: save sample rate (for post-processing)
+    #
     if global_parameters.MICROPHONE_SAMPLE_RATE is None:
         logging.info(f"MICROPHONE_SAMPLE_RATE = {rate}")
         global_parameters.MICROPHONE_SAMPLE_RATE = rate
@@ -378,8 +395,16 @@ def handle_streaming(audio):
         logging.info(f"-sample rate changed: {global_parameters.MICROPHONE_SAMPLE_RATE} ->  {rate} - \n")
         global_parameters.MICROPHONE_SAMPLE_RATE = rate
 
+    #
+    #   step 3: push to Q's
+    #
+    #   Note:
+    #   we push speech + counter into in order to logs the starting times (will be used for debuggings) only
+    #
     global_parameters.vad_queue.put(voice)
-    global_parameters.speech_queue.put(voice)
+    global_parameters.speech_queue.put((global_parameters.streem_counter, voice))
+    global_parameters.streem_counter = global_parameters.streem_counter + 1
+
 
 
 

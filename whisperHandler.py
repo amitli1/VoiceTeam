@@ -22,6 +22,7 @@ def create_bad_response():
 
 def Get_Whisper_From_Server(audio_data):
 
+    logging.info(f"New Request for whisper, audio length: {round(len(audio_data['wav'])/16000, 2)} seconds")
     if settings.RUN_LOCAL_WHISPER is True:
         res = use_local_whisper(audio_data)
         return res
@@ -41,7 +42,7 @@ def use_local_whisper(audio_data):
     audio = [float(i) for i in audio_data["wav"]]
     audio = whisper.pad_or_trim(np.array(audio)).astype('float32')
     if settings.whisper_model is None:
-        settings.whisper_model = whisper.load_model("base", device=settings.DEVICE)
+        settings.whisper_model = whisper.load_model(settings.whisper_model_type, device=settings.DEVICE)
     mel   = whisper.log_mel_spectrogram(audio).to(settings.DEVICE)
 
     # decode the audio
