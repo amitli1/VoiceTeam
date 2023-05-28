@@ -74,7 +74,7 @@ def schedule_preprocess_speech_job():
     #
     if global_parameters.previous_speech is not None:
         prev_speech = global_parameters.previous_speech
-        logging.info(f"use previous continues speech of length: {round(len(prev_speech)/16000, 2)} seconds")
+        logging.info(f"use previous continues speech of length: {round(len(prev_speech)/16000, 2)} seconds, (current speech time: {start_speech_time})")
         speech      = np.concatenate((prev_speech, speech))
         start_speech_time = start_speech_time - len(prev_speech)/16000
     global_parameters.previous_speech = None
@@ -96,18 +96,25 @@ def schedule_preprocess_speech_job():
         global_parameters.processed_queue.put(("\n", "\n"))
         return
 
-    for val in speech_timestamps:
-        start_sample = val['start']
-        end_sample   = val['end']
-        tmp_speech   = speech[start_sample:end_sample].numpy()
-        global_parameters.processed_queue.put((start_speech_time, tmp_speech))
-        global_start_time = round(start_speech_time + start_sample/16000, 2)
-        logging.info(f"Push speech to whisper Q, Start Time: {global_start_time}, audio length: {round(len(tmp_speech) / 16000, 2)} seconds, |Q| = {global_parameters.processed_queue.qsize()}")
+    collected_speech  = global_parameters.vad_collect_chunks(speech_timestamps, speech)
+    collected_len     = round(len(collected_speech) / 16000, 2)
+    global_start_time = round(start_speech_time, 2)
+    global_parameters.processed_queue.put((start_speech_time, tmp_speech))
+    logging.info(f"Push speech to whisper Q, Start Time: {global_start_time}, audio length: {collected_len} seconds, |Q| = {global_parameters.processed_queue.qsize()}")
+
+    # for val in speech_timestamps:
+    #     start_sample = val['start']
+    #     end_sample   = val['end']
+    #     tmp_speech   = speech[start_sample:end_sample].numpy()
+    #     global_parameters.processed_queue.put((start_speech_time, tmp_speech))
+    #     global_start_time = round(start_speech_time + start_sample/16000, 2)
+    #     logging.info(f"Push speech to whisper Q, Start Time: {global_start_time}, audio length: {round(len(tmp_speech) / 16000, 2)} seconds, |Q| = {global_parameters.processed_queue.qsize()}")
 
 
     #
     #   if we need to add new line
     #
+    val = speech_timestamps[-1]
     if val['end'] < len(speech) and ((len(speech) - val['end']) >= 16000*0.2):
         logging.debug("Add new line (sentence finished) and we have speech")
         global_parameters.processed_queue.put(("\n", "\n"))
@@ -400,7 +407,7 @@ def handle_streaming(audio):
         global_parameters.MICROPHONE_SAMPLE_RATE = rate
 
     if rate != global_parameters.MICROPHONE_SAMPLE_RATE:
-        logging.info(f"-sample rate changed: {global_parameters.MICROPHONE_SAMPLE_RATE} ->  {rate} - \n")
+        logging.info(f"sample rate changed: {global_parameters.MICROPHONE_SAMPLE_RATE} ->  {rate} - \n")
         global_parameters.MICROPHONE_SAMPLE_RATE = rate
 
     #
