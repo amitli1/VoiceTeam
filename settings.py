@@ -40,7 +40,7 @@ use_language                = None
 #
 RUN_LOCAL_WHISPER  = True
 whisper_model      = None
-whisper_model_type = "base" # for local running
+whisper_model_type = "medium" # for local running
 
 #
 #   offline diarization

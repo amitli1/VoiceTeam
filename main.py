@@ -93,14 +93,14 @@ def schedule_preprocess_speech_job():
     #
     if len(speech_timestamps) == 0:
         logging.debug("Add new line (sentence finished), and we dont have speech")
-        global_parameters.processed_queue.put("\n", "\n")
+        global_parameters.processed_queue.put(("\n", "\n"))
         return
 
     for val in speech_timestamps:
         start_sample = val['start']
         end_sample   = val['end']
         tmp_speech   = speech[start_sample:end_sample].numpy()
-        global_parameters.processed_queue.put(start_speech_time, tmp_speech)
+        global_parameters.processed_queue.put((start_speech_time, tmp_speech))
         logging.info(f"Push speech to whisper Q, audio length: {round(len(tmp_speech) / 16000, 2)} seconds, |Q| = {global_parameters.processed_queue.qsize()}")
 
 
@@ -109,7 +109,7 @@ def schedule_preprocess_speech_job():
     #
     if val['end'] < len(speech) and ((len(speech) - val['end']) >= 16000*0.2):
         logging.debug("Add new line (sentence finished) and we have speech")
-        global_parameters.processed_queue.put("\n", "\n")
+        global_parameters.processed_queue.put(("\n", "\n"))
 
     if val['end']  >= len(speech):
         global_parameters.previous_speech = speech[speech_timestamps[-1]["start"]:].numpy()
@@ -200,7 +200,7 @@ def schedule_vad_job():
 
 
 
-def add_new_whisper_results(all_results, text, lang):
+def add_new_whisper_results(all_results, text, lang, start_speech_time=None, speech_length=None):
 
     if len(all_results) == 0:
         all_results.append((text, lang))
@@ -215,10 +215,10 @@ def add_new_whisper_results(all_results, text, lang):
                logging.info(f"Replace Last Text: {all_results[-1][0]} With: {text}")
                all_results[-1] = (text, lang)
 
-    # if text == "\n":
-    #     logging.info(f"got: NEW LINE, final all_results = {all_results}")
-    # else:
-    #     logging.info(f"got: {text}, final all_results = {all_results}")
+    if text == "\n":
+        logging.info(f"Add Whisper results: NEW-LINE, Start time: {start_speech_time}, speech length: {speech_length}, Total #Results: {len(all_results)}")
+    else:
+        logging.info(f"Add Whisper results: {text}, Start time: {start_speech_time}, speech length: {speech_length}, Total #Results: {len(all_results)}")
     return all_results
 
 
@@ -248,7 +248,7 @@ def schedule_whisper_job():
                 text, language          = whisperHandler.filter_bad_results(whisper_results)
                 if text != "":
                     global_parameters.last_lang = language
-                    global_parameters.all_texts = add_new_whisper_results(global_parameters.all_texts, text, language)
+                    global_parameters.all_texts = add_new_whisper_results(global_parameters.all_texts, text, language, start_speech_time, len(speech)/16000)
                     logging.info(f"Got Good Results from Whisper, Text: {text} \tLanguage: {language}, Speech Len: {round(len(speech)/16000, 2)} Seconds")
 
                 if settings.record_to_wav is True:
