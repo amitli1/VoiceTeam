@@ -212,8 +212,12 @@ def add_new_whisper_results(all_results, text, lang, start_speech_time=None, spe
            if text == "\n":
                all_results.append((text, lang))
            else:
-               logging.info(f"Replace Last Text: {all_results[-1][0]} With: {text}")
-               all_results[-1] = (text, lang)
+                if len(all_results) > 0:
+                    if all_results[-1][0] == "\n":
+                        logging.info(f"Replace Last Text: NEW-LINE With: {text}")
+                    else:
+                        logging.info(f"Replace Last Text: {all_results[-1][0]} With: {text}")
+                    all_results[-1] = (text, lang)
 
     if text == "\n":
         logging.info(f"Add Whisper results: NEW-LINE, Start time: {start_speech_time}, speech length: {speech_length}, Total #Results: {len(all_results)}")
