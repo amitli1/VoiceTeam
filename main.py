@@ -93,14 +93,14 @@ def schedule_preprocess_speech_job():
     #
     if len(speech_timestamps) == 0:
         logging.debug("Add new line (sentence finished), and we dont have speech")
-        global_parameters.processed_queue.put("\n")
+        global_parameters.processed_queue.put("\n", "\n")
         return
 
     for val in speech_timestamps:
         start_sample = val['start']
         end_sample   = val['end']
         tmp_speech   = speech[start_sample:end_sample].numpy()
-        global_parameters.processed_queue.put(tmp_speech)
+        global_parameters.processed_queue.put(start_speech_time, tmp_speech)
         logging.info(f"Push speech to whisper Q, audio length: {round(len(tmp_speech) / 16000, 2)} seconds, |Q| = {global_parameters.processed_queue.qsize()}")
 
 
@@ -109,7 +109,7 @@ def schedule_preprocess_speech_job():
     #
     if val['end'] < len(speech) and ((len(speech) - val['end']) >= 16000*0.2):
         logging.debug("Add new line (sentence finished) and we have speech")
-        global_parameters.processed_queue.put("\n")
+        global_parameters.processed_queue.put("\n", "\n")
 
     if val['end']  >= len(speech):
         global_parameters.previous_speech = speech[speech_timestamps[-1]["start"]:].numpy()
@@ -234,7 +234,7 @@ def schedule_whisper_job():
     #
     if q_len != 0:
         for i in range(q_len):
-            speech = global_parameters.processed_queue.get()
+            start_speech_time, speech = global_parameters.processed_queue.get()
 
             if type(speech) == str:
                 if speech == "\n":
