@@ -101,7 +101,8 @@ def schedule_preprocess_speech_job():
         end_sample   = val['end']
         tmp_speech   = speech[start_sample:end_sample].numpy()
         global_parameters.processed_queue.put((start_speech_time, tmp_speech))
-        logging.info(f"Push speech to whisper Q, audio length: {round(len(tmp_speech) / 16000, 2)} seconds, |Q| = {global_parameters.processed_queue.qsize()}")
+        global_start_time = round(start_speech_time + start_sample/16000, 2)
+        logging.info(f"Push speech to whisper Q, Start Time: {global_start_time}, audio length: {round(len(tmp_speech) / 16000, 2)} seconds, |Q| = {global_parameters.processed_queue.qsize()}")
 
 
     #
@@ -112,6 +113,8 @@ def schedule_preprocess_speech_job():
         global_parameters.processed_queue.put(("\n", "\n"))
 
     if val['end']  >= len(speech):
+        dbg_length = len(speech[speech_timestamps[-1]["start"]:].numpy()) / 16000
+        logging.info(f"Save speech for next step processing, length: {round(dbg_length, 2)}")
         global_parameters.previous_speech = speech[speech_timestamps[-1]["start"]:].numpy()
 
 
@@ -219,10 +222,11 @@ def add_new_whisper_results(all_results, text, lang, start_speech_time=None, spe
                         logging.info(f"Replace Last Text: {all_results[-1][0]} With: {text}")
                     all_results[-1] = (text, lang)
 
-    if text == "\n":
-        logging.info(f"Add Whisper results: NEW-LINE, Start time: {start_speech_time}, speech length: {speech_length}, Total #Results: {len(all_results)}")
-    else:
-        logging.info(f"Add Whisper results: {text}, Start time: {start_speech_time}, speech length: {speech_length}, Total #Results: {len(all_results)}")
+    if start_speech_time is not None:
+        if text == "\n":
+            logging.info(f"Add Whisper results: NEW-LINE, Start time: {start_speech_time}, speech length: {speech_length}, Total #Results: {len(all_results)}")
+        else:
+            logging.info(f"Add Whisper results: {text}, Start time: {round(start_speech_time, 2)}, speech length: {speech_length}, Total #Results: {len(all_results)}")
     return all_results
 
 
