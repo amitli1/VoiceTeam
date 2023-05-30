@@ -12,7 +12,7 @@ DEVICE             = torch.device("cuda:0" if torch.cuda.is_available() else "cp
 SAMPLE_RATE        = 16000
 SAVE_RESULTS_PATH  = f"{os.getcwd()}/TmpFiles"
 record_to_wav      = False
-MAX_SAVED_RESULTS  = 5
+MAX_SAVED_RESULTS  = 7
 
 
 
@@ -33,18 +33,24 @@ compression_ratio_threshold = 2.4
 logprob_threshold           = -1.0
 no_speech_threshold         = 0.95
 user_prompt                 = False
-use_language                = None
+use_language                = [None]
 
 #
 #   local whisper
 #
 RUN_LOCAL_WHISPER  = True
 whisper_model      = None
-whisper_model_type = "medium" # for local running
+whisper_model_type = "base" # for local running
 
 #
 #   offline diarization
 #
 sd_pipeline          = None #Pipeline.from_pretrained("pyannote/speaker-diarization")
 run_online_pyyannote = True
+
+
+#
+#   silence time for new line
+#
+MIN_SILENCE_SEC = 0.2
 

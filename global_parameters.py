@@ -55,7 +55,3 @@ recordingUtil = RecordingUtil()
 #   Common voice files
 #
 d_common_voice_ru = {t[1]: t[2] for t in pd.read_csv('./common_voice_ru/common_voice_ru.csv').values}
-
-#
-
-#
